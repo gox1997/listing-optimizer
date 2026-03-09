@@ -42,6 +42,7 @@ export async function proxy(request: NextRequest) {
 
     const { pathname } = request.nextUrl;
 
+    // Define which routes require authentication
     const isAppPage =
         pathname.startsWith("/dashboard") ||
         pathname.startsWith("/generate") ||
@@ -51,12 +52,27 @@ export async function proxy(request: NextRequest) {
         pathname.startsWith("/bulk") ||
         pathname.startsWith("/onboarding");
 
+    // Unauthenticated users trying to access app pages → redirect to /auth
     if (isAppPage && !user) {
         return NextResponse.redirect(new URL("/auth", request.url));
     }
 
+    // Authenticated users visiting /auth → redirect to dashboard
     if (pathname === "/auth" && user) {
         return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
+    // Authenticated users who haven't completed onboarding (and not already there)
+    if (user && pathname !== "/onboarding" && isAppPage) {
+        const { data: profile } = await supabase
+            .from("user_profiles")
+            .select("onboarding_completed")
+            .eq("id", user.id)
+            .single();
+
+        if (profile && !profile.onboarding_completed) {
+            return NextResponse.redirect(new URL("/onboarding", request.url));
+        }
     }
 
     return response;
