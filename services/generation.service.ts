@@ -7,16 +7,21 @@ import { checkQuota, incrementUsage } from "@/services/usage.service";
 import type { GenerationInput, ListingOutput } from "@/types";
 
 /* ------------------------------------------------------------------ */
-/*  Error codes — frontend uses these to show the right UI             */
+/*  Error codes                                                         */
 /* ------------------------------------------------------------------ */
 
-export type GenerationErrorCode =
-    | "quota_exceeded" // show upgrade modal
-    | "ai_error" // show retry button
-    | "save_error"; // show retry button + contact support
+export type GenerationErrorCode = "quota_exceeded" | "ai_error" | "save_error";
+
+export type ServiceErrorCode = "not_found" | "internal_error";
+
+type ServiceError = {
+    success: false;
+    error: string;
+    code: ServiceErrorCode;
+};
 
 /* ------------------------------------------------------------------ */
-/*  Return type                                                         */
+/*  Return types                                                        */
 /* ------------------------------------------------------------------ */
 
 export type GenerationResult =
@@ -37,14 +42,13 @@ export type GenerationResult =
 
 /* ------------------------------------------------------------------ */
 /*  createGeneration                                                    */
-/*  Orchestrates: quota check → AI call → DB save → usage increment   */
 /* ------------------------------------------------------------------ */
 
 export async function createGeneration(
     userId: string,
     input: GenerationInput,
 ): Promise<GenerationResult> {
-    // Step 1: Check quota — never call OpenAI if user is over limit
+    // Step 1: Check quota
     const quota = await checkQuota(userId);
 
     if (!quota.allowed) {
@@ -75,7 +79,6 @@ export async function createGeneration(
     });
 
     if (!saveResult.success) {
-        // AI call succeeded but save failed — log, don't increment
         console.error(
             "[generation.service] Save failed after successful AI call:",
             {
@@ -90,8 +93,7 @@ export async function createGeneration(
         };
     }
 
-    // Step 4: Increment usage — after successful save
-    // Fire and don't await — never block the response on a counter increment
+    // Step 4: Increment usage — fire and forget, never block the response
     void incrementUsage(userId);
 
     return {
@@ -107,27 +109,40 @@ export async function createGeneration(
 
 /* ------------------------------------------------------------------ */
 /*  getGeneration                                                       */
-/*  Fetches a single generation — enforces ownership via user_id       */
 /* ------------------------------------------------------------------ */
 
 export async function getGeneration(
     userId: string,
     generationId: string,
-): Promise<
-    | { success: true; generation: GenerationRow }
-    | { success: false; error: string }
-> {
+): Promise<{ success: true; generation: GenerationRow } | ServiceError> {
     const supabase = await createServerSupabaseClient();
 
     const { data, error } = await supabase
         .from("generations")
         .select("*")
         .eq("id", generationId)
-        .eq("user_id", userId) // ownership enforced at query level
+        .eq("user_id", userId)
         .single();
 
-    if (error || !data) {
-        return { success: false, error: "Generation not found." };
+    if (error?.code === "PGRST116" || !data) {
+        return {
+            success: false,
+            code: "not_found",
+            error: "Generation not found.",
+        };
+    }
+
+    if (error) {
+        console.error("[generation.service] getGeneration failed:", {
+            userId,
+            generationId,
+            message: error.message,
+        });
+        return {
+            success: false,
+            code: "internal_error",
+            error: "Failed to fetch generation.",
+        };
     }
 
     return { success: true, generation: data as GenerationRow };
@@ -135,7 +150,6 @@ export async function getGeneration(
 
 /* ------------------------------------------------------------------ */
 /*  listGenerations                                                     */
-/*  Paginated history for the current user                             */
 /* ------------------------------------------------------------------ */
 
 export async function listGenerations(
@@ -144,7 +158,7 @@ export async function listGenerations(
     limit = 20,
 ): Promise<
     | { success: true; generations: GenerationRow[]; total: number }
-    | { success: false; error: string }
+    | ServiceError
 > {
     const supabase = await createServerSupabaseClient();
     const from = (page - 1) * limit;
@@ -160,9 +174,13 @@ export async function listGenerations(
     if (error) {
         console.error("[generation.service] listGenerations failed:", {
             userId,
-            error: error.message,
+            message: error.message,
         });
-        return { success: false, error: "Failed to fetch generation history." };
+        return {
+            success: false,
+            code: "internal_error",
+            error: "Failed to fetch generation history.",
+        };
     }
 
     return {
@@ -174,13 +192,12 @@ export async function listGenerations(
 
 /* ------------------------------------------------------------------ */
 /*  deleteGeneration                                                    */
-/*  Soft pattern: enforces ownership, returns not-found if wrong user  */
 /* ------------------------------------------------------------------ */
 
 export async function deleteGeneration(
     userId: string,
     generationId: string,
-): Promise<{ success: true } | { success: false; error: string }> {
+): Promise<{ success: true } | ServiceError> {
     const supabase = await createServerSupabaseClient();
 
     const { error, count } = await supabase
@@ -193,13 +210,21 @@ export async function deleteGeneration(
         console.error("[generation.service] deleteGeneration failed:", {
             userId,
             generationId,
-            error: error.message,
+            message: error.message,
         });
-        return { success: false, error: "Failed to delete generation." };
+        return {
+            success: false,
+            code: "internal_error",
+            error: "Failed to delete generation.",
+        };
     }
 
     if (count === 0) {
-        return { success: false, error: "Generation not found." };
+        return {
+            success: false,
+            code: "not_found",
+            error: "Generation not found.",
+        };
     }
 
     return { success: true };
