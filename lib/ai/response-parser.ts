@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { ListingOutput } from "@/types";
 
 /* ------------------------------------------------------------------ */
-/*  Zod schema                                                          */
+/*  Zod schema — with .transform() for typed tuple (no `as` cast)     */
 /* ------------------------------------------------------------------ */
 
 const ListingOutputSchema = z.object({
@@ -15,7 +15,13 @@ const ListingOutputSchema = z.object({
 
     bulletPoints: z
         .array(z.string().min(15, "Bullet point is too short"))
-        .length(5, "Must have exactly 5 bullet points"),
+        .length(5, "Must have exactly 5 bullet points")
+        // .transform() eliminates the need for `as [string,string,string,string,string]`
+        // Zod has already validated length === 5 before this runs — safe to assert
+        .transform(
+            (arr): [string, string, string, string, string] =>
+                arr as [string, string, string, string, string],
+        ),
 
     description: z
         .string()
@@ -79,7 +85,7 @@ export function parseGenerationResponse(rawResponse: string): ParseResult {
         };
     }
 
-    // Step 3: validate schema
+    // Step 3: validate schema + transform
     const validated = ListingOutputSchema.safeParse(parsed);
 
     if (!validated.success) {
@@ -91,7 +97,7 @@ export function parseGenerationResponse(rawResponse: string): ParseResult {
         };
     }
 
-    // Step 4: post-process
+    // Step 4: post-process (validated.data already has transformed bulletPoints tuple)
     return { success: true, data: postProcess(validated.data) };
 }
 
@@ -141,12 +147,13 @@ export function postProcess(
     return {
         seoTitle: data.seoTitle.trim(),
 
+        // bulletPoints is already a [string,string,string,string,string] tuple
+        // from the Zod .transform() above — trim and strip trailing periods
         bulletPoints: data.bulletPoints.map((b) =>
             b.trim().replace(/\.\s*$/, ""),
         ) as [string, string, string, string, string],
 
         description: data.description.trim(),
-
         metaDescription: enforceMetaLength(data.metaDescription.trim()),
 
         tags: [
@@ -160,13 +167,28 @@ export function postProcess(
 }
 
 /* ------------------------------------------------------------------ */
-/*  Helpers                                                             */
+/*  enforceMetaLength — improved word-boundary truncation              */
 /* ------------------------------------------------------------------ */
 
-function enforceMetaLength(meta: string): string {
+export function enforceMetaLength(meta: string): string {
     if (meta.length <= 160) return meta;
-    const truncated = meta.slice(0, 157);
-    const lastSpace = truncated.lastIndexOf(" ");
-    const clean = lastSpace > 100 ? truncated.slice(0, lastSpace) : truncated;
-    return clean + "...";
+
+    // Split on words and rebuild until we fit, then add ellipsis
+    // This is safer than slicing at an arbitrary character index because:
+    // - It never cuts in the middle of a word
+    // - The ellipsis budget (3 chars) is always accounted for up front
+    const words = meta.split(" ");
+    const budget = 160 - 3; // reserve 3 chars for "..."
+    let result = "";
+
+    for (const word of words) {
+        const candidate = result ? `${result} ${word}` : word;
+        if (candidate.length > budget) break;
+        result = candidate;
+    }
+
+    // Fallback: if even the first word exceeds budget, hard-slice
+    if (!result) return meta.slice(0, budget) + "...";
+
+    return result + "...";
 }
