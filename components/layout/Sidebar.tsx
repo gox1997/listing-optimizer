@@ -115,8 +115,8 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
                             aria-hidden="true"
                         />
                     </div>
-                    <span className="font-bold text-slate-900 text-lg tracking-tight">
-                        Listing<span className="text-slate-400">AI</span>
+                    <span className="font-bold text-slate-900 text-2xl tracking-tight ">
+                        Listing<span className="text-slate-400">Bull</span>
                     </span>
                 </Link>
             </div>
@@ -153,7 +153,9 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
                                 className="w-4 h-4 shrink-0 transition-transform duration-150 group-hover:scale-110"
                                 aria-hidden="true"
                             />
-                            <span className="flex-1">{label}</span>
+                            <span className="flex-1 text-base sm:text-lg">
+                                {label}
+                            </span>
 
                             {isActive && (
                                 <ChevronRight
@@ -309,8 +311,8 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
                             aria-hidden="true"
                         />
                     </div>
-                    <span className="font-bold text-slate-900 tracking-tight">
-                        Listing<span className="text-slate-400">AI</span>
+                    <span className="font-bold text-slate-900 text-2xl tracking-tight">
+                        Listing<span className="text-slate-400">Bull</span>
                     </span>
                 </Link>
 

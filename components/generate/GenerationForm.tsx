@@ -436,12 +436,12 @@ function FormSection({
                 {inputId ? (
                     <label
                         htmlFor={inputId}
-                        className="text-sm font-semibold text-slate-900"
+                        className="text-base font-semibold text-slate-900"
                     >
                         {label}
                     </label>
                 ) : (
-                    <span className="text-sm font-semibold text-slate-900">
+                    <span className="text-base font-semibold text-slate-900">
                         {label}
                     </span>
                 )}
