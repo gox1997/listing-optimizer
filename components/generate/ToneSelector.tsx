@@ -27,24 +27,21 @@ export function ToneSelector({ value, onChange, disabled }: Props) {
             >
                 {TONES.map((t) => (
                     <Tooltip key={t.value}>
-                        <TooltipTrigger>
-                            <button
-                                type="button"
-                                role="radio"
-                                aria-checked={value === t.value}
-                                disabled={disabled}
-                                onClick={() => onChange(t.value)}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-lg border-2 text-xs font-semibold transition-all duration-150",
-                                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2",
-                                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                                    value === t.value
-                                        ? "border-slate-900 bg-slate-900 text-white"
-                                        : "border-slate-200 hover:border-slate-300 text-slate-600",
-                                )}
-                            >
-                                {t.label}
-                            </button>
+                        <TooltipTrigger
+                            role="radio"
+                            aria-checked={value === t.value}
+                            disabled={disabled}
+                            onClick={() => onChange(t.value)}
+                            className={cn(
+                                "px-3 py-1.5 rounded-lg border-2 text-xs font-semibold transition-all duration-150",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2",
+                                "disabled:opacity-50 disabled:cursor-not-allowed",
+                                value === t.value
+                                    ? "border-slate-900 bg-slate-900 text-white"
+                                    : "border-slate-200 hover:border-slate-300 text-slate-600",
+                            )}
+                        >
+                            {t.label}
                         </TooltipTrigger>
                         <TooltipContent
                             side="bottom"
