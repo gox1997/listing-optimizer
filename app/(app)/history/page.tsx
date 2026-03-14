@@ -178,7 +178,7 @@ export default async function HistoryPage({ searchParams }: Props) {
                         Previous
                     </PaginationLink>
 
-                    <span className="text-sm text-slate-500">
+                    <span className="text-base text-slate-500">
                         Page{" "}
                         <span className="font-semibold text-slate-900">
                             {page}
@@ -209,11 +209,11 @@ function PageHeader({ total }: { total: number }) {
     return (
         <div className="flex items-center justify-between">
             <div>
-                <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 flex items-center gap-2">
                     <History className="w-5 h-5" aria-hidden="true" />
                     History
                 </h1>
-                <p className="text-slate-500 text-sm mt-1">
+                <p className="text-slate-500 text-base mt-1">
                     {total > 0
                         ? `${total} listing${total === 1 ? "" : "s"} generated`
                         : "No generations yet"}
@@ -221,7 +221,7 @@ function PageHeader({ total }: { total: number }) {
             </div>
             <Link
                 href="/generate"
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-xl text-base font-semibold hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
             >
                 <Sparkles className="w-4 h-4" aria-hidden="true" />
                 New
@@ -245,7 +245,7 @@ function PaginationLink({
             aria-disabled={disabled}
             tabIndex={disabled ? -1 : undefined}
             className={cn(
-                "px-4 py-2 rounded-xl border border-slate-200 text-sm font-medium transition-colors",
+                "px-4 py-2 rounded-xl border border-slate-200 text-base font-medium transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900",
                 disabled
                     ? "opacity-40 pointer-events-none"

@@ -101,10 +101,10 @@ export default async function DashboardPage() {
         <div className="max-w-3xl mx-auto space-y-8">
             {/* Welcome */}
             <div>
-                <h1 className="text-2xl font-bold text-slate-900">
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
                     Welcome back, {displayName} 👋
                 </h1>
-                <p className="text-slate-500 mt-1 text-sm">
+                <p className="text-slate-500 mt-1 text-base sm:text-lg">
                     Here&apos;s what&apos;s happening with your listings.
                 </p>
             </div>
@@ -175,7 +175,7 @@ export default async function DashboardPage() {
                 <div
                     role="alert"
                     className={cn(
-                        "flex items-center justify-between gap-4 p-4 rounded-xl border text-sm",
+                        "flex items-center justify-between gap-4 p-4 rounded-xl border text-base",
                         isAtLimit
                             ? "bg-red-50 border-red-200 text-red-800"
                             : "bg-amber-50 border-amber-200 text-amber-800",
@@ -206,7 +206,7 @@ export default async function DashboardPage() {
                 <Link
                     href="/generate"
                     className={cn(
-                        "flex items-center gap-4 p-5 rounded-2xl transition-all",
+                        "flex items-center gap-4 p-4 rounded-2xl transition-all",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900",
                         isAtLimit
                             ? "bg-slate-100 text-slate-400 cursor-not-allowed pointer-events-none"
@@ -219,8 +219,8 @@ export default async function DashboardPage() {
                         <Sparkles className="w-5 h-5" aria-hidden="true" />
                     </div>
                     <div>
-                        <p className="font-bold">Generate listing</p>
-                        <p className="text-sm opacity-70 mt-0.5">
+                        <p className="font-bold text-lg">Generate listing</p>
+                        <p className="text-base opacity-70 mt-0.5">
                             {isAtLimit
                                 ? "Upgrade to continue"
                                 : "AI-optimized in seconds"}
@@ -230,7 +230,7 @@ export default async function DashboardPage() {
 
                 <Link
                     href="/history"
-                    className="flex items-center gap-4 p-5 bg-white border border-slate-200 rounded-2xl hover:border-slate-300 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                    className="flex items-center gap-4 p-4 bg-white border border-slate-200 rounded-2xl hover:border-slate-300 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
                 >
                     <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center shrink-0">
                         <History
@@ -239,8 +239,10 @@ export default async function DashboardPage() {
                         />
                     </div>
                     <div>
-                        <p className="font-bold text-slate-900">View history</p>
-                        <p className="text-sm text-slate-500 mt-0.5">
+                        <p className="font-bold text-slate-900 text-lg">
+                            View history
+                        </p>
+                        <p className="text-base text-slate-500 mt-0.5">
                             Browse past generations
                         </p>
                     </div>
@@ -251,12 +253,12 @@ export default async function DashboardPage() {
             {recentGens.length > 0 && (
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-sm font-semibold text-slate-900">
+                        <h2 className="text-base font-semibold text-slate-900">
                             Recent
                         </h2>
                         <Link
                             href="/history"
-                            className="text-xs text-slate-500 hover:text-slate-900 transition-colors"
+                            className="text-sm text-slate-500 hover:text-slate-900 transition-colors"
                         >
                             View all
                         </Link>
@@ -332,12 +334,14 @@ function StatCard({
                     className={cn("w-2 h-2 rounded-full shrink-0", dotColor)}
                     aria-hidden="true"
                 />
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <p className="text-sm font-medium font-mono text-slate-500 uppercase tracking-wider">
                     {label}
                 </p>
             </div>
-            <p className="text-2xl font-bold text-slate-900">{value}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{sub}</p>
+            <p className="text-lg font-bold font-mono text-slate-900">
+                {value}
+            </p>
+            <p className="text-sm font-mono text-slate-400 mt-0.5">{sub}</p>
             {children}
         </div>
     );

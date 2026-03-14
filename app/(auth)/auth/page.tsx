@@ -84,13 +84,13 @@ export default function AuthPage() {
                             <h2 className="font-semibold text-slate-900 mb-2">
                                 Check your email
                             </h2>
-                            <p className="text-sm text-slate-500">
+                            <p className="text-base text-slate-500">
                                 We sent a sign-in link to{" "}
                                 <strong>{email}</strong>
                             </p>
                             <button
                                 onClick={() => setSent(false)}
-                                className="mt-4 text-sm text-slate-400 hover:text-slate-600 transition-colors"
+                                className="mt-4 text-base text-slate-400 hover:text-slate-600 transition-colors"
                             >
                                 Use a different email
                             </button>
@@ -108,7 +108,7 @@ export default function AuthPage() {
                                 className={cn(
                                     "w-full flex items-center justify-center gap-3",
                                     "px-4 py-2.5 border border-slate-200 rounded-xl",
-                                    "text-sm font-medium text-slate-700",
+                                    "text-base font-medium text-slate-700",
                                     "hover:bg-slate-50 transition-colors",
                                     "disabled:opacity-50 disabled:cursor-not-allowed",
                                 )}
@@ -124,7 +124,7 @@ export default function AuthPage() {
                             {/* Divider */}
                             <div className="flex items-center gap-3 my-4">
                                 <div className="flex-1 h-px bg-slate-200" />
-                                <span className="text-xs text-slate-400">
+                                <span className="text-base text-slate-400">
                                     or
                                 </span>
                                 <div className="flex-1 h-px bg-slate-200" />
@@ -182,7 +182,7 @@ export default function AuthPage() {
                     )}
                 </div>
 
-                <p className="text-center text-xs text-slate-400 mt-6">
+                <p className="text-center text-xs font-mono text-slate-400 mt-6">
                     By continuing you agree to our Terms of Service
                 </p>
             </div>

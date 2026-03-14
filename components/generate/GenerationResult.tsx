@@ -31,7 +31,6 @@ export function GenerationResult({ generation }: Props) {
 
     const [descExpanded, setDescExpanded] = useState(false);
 
-    // All hooks before any conditional returns
     const wordCount = useMemo(
         () =>
             output?.description.trim().split(/\s+/).filter(Boolean).length ?? 0,
@@ -43,7 +42,6 @@ export function GenerationResult({ generation }: Props) {
         [output?.description],
     );
 
-    // Guard after all hooks
     if (!output) {
         return (
             <div className="text-center py-16 text-slate-400 text-sm">
@@ -84,7 +82,7 @@ export function GenerationResult({ generation }: Props) {
                 copyText={output.seoTitle}
                 copyLabel="title"
             >
-                <p className="text-sm font-medium text-slate-900 leading-relaxed">
+                <p className="text-base font-medium text-slate-900 leading-relaxed">
                     {output.seoTitle}
                 </p>
                 <p className="text-xs text-slate-400 mt-1">
@@ -110,7 +108,7 @@ export function GenerationResult({ generation }: Props) {
                                 {i + 1}
                             </span>
                             <div className="flex-1 flex items-start justify-between gap-2">
-                                <p className="text-sm text-slate-700 leading-relaxed">
+                                <p className="text-base text-slate-700 leading-relaxed">
                                     {bullet}
                                 </p>
                                 <CopyButton
@@ -134,7 +132,7 @@ export function GenerationResult({ generation }: Props) {
             >
                 <div
                     id="description-body"
-                    className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap"
+                    className="text-base text-slate-700 leading-relaxed whitespace-pre-wrap"
                 >
                     {needsExpand && !descExpanded
                         ? shortDescription + "..."
@@ -154,7 +152,7 @@ export function GenerationResult({ generation }: Props) {
                                 <ChevronUp
                                     className="w-3.5 h-3.5"
                                     aria-hidden="true"
-                                />{" "}
+                                />
                                 Show less
                             </>
                         ) : (
@@ -162,7 +160,7 @@ export function GenerationResult({ generation }: Props) {
                                 <ChevronDown
                                     className="w-3.5 h-3.5"
                                     aria-hidden="true"
-                                />{" "}
+                                />
                                 Show more
                             </>
                         )}
@@ -180,7 +178,7 @@ export function GenerationResult({ generation }: Props) {
                 copyText={output.metaDescription}
                 copyLabel="meta description"
             >
-                <p className="text-sm text-slate-700 leading-relaxed">
+                <p className="text-base text-slate-700 leading-relaxed">
                     {output.metaDescription}
                 </p>
                 <p
@@ -242,10 +240,6 @@ export function GenerationResult({ generation }: Props) {
 }
 
 GenerationResult.displayName = "GenerationResult";
-
-/* ------------------------------------------------------------------ */
-/*  ResultCard                                                          */
-/* ------------------------------------------------------------------ */
 
 function ResultCard({
     id,

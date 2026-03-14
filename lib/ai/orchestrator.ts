@@ -5,14 +5,9 @@
 //   0. Input validation      — guard before any AI calls
 //   1. Keyword Intelligence  — discovers optimal keywords (non-fatal)
 //   2. Input Enrichment      — injects discovered keywords
-//   3. Listing Generation    — core AI call (fatal if fails, fallback model on retry exhaustion)
+//   3. Listing Generation    — core AI call (fatal; fallback model on retry exhaustion)
 //   4. Response Parsing      — existing Zod validator
 //   5. Listing Score         — quality audit (non-fatal)
-//
-// Every step is:
-//   - Logged with a requestId for full pipeline traceability
-//   - Wrapped in callWithRetry() for transient failure resilience
-//   - Timed and emitted as a structured metric
 
 import { z } from "zod";
 import { randomUUID } from "crypto";
@@ -33,7 +28,7 @@ import { createRequestLogger, emitMetric, type RequestLogger } from "./logger";
 import type { GenerationInput, ListingOutput } from "@/types";
 
 /* ================================================================== */
-/*  AI call config — `satisfies` catches future typos at compile time  */
+/*  AI call config                                                      */
 /* ================================================================== */
 
 type AICallConfig = {
@@ -45,22 +40,21 @@ type AICallConfig = {
 const KEYWORD_CONFIG = {
     model: "gpt-4o-mini",
     max_tokens: 600,
-    temperature: 0.3, // factual and analytical — low creativity
+    temperature: 0.3,
 } satisfies AICallConfig;
 
 const SCORE_CONFIG = {
     model: "gpt-4o-mini",
     max_tokens: 900,
-    temperature: 0.2, // consistent and calibrated — very low creativity
+    temperature: 0.2,
 } satisfies AICallConfig;
 
 const GENERATION_CONFIG = {
     model: "gpt-4o-mini",
     max_tokens: 2000,
-    temperature: 0.7, // creative — needs variety
+    temperature: 0.7,
 } satisfies AICallConfig;
 
-/** Fallback for generation only — used if primary exhausts all retries */
 const GENERATION_FALLBACK_MODEL = "gpt-3.5-turbo" as const;
 
 /* ================================================================== */
@@ -68,8 +62,8 @@ const GENERATION_FALLBACK_MODEL = "gpt-3.5-turbo" as const;
 /* ================================================================== */
 
 const RETRY_CONFIG = {
-    maxAttempts: 3, // 1 original + 2 retries
-    baseDelayMs: 500, // doubles on each retry: 500 → 1000 → 2000
+    maxAttempts: 3,
+    baseDelayMs: 500,
     transientCodes: new Set([429, 500, 503]),
 } as const;
 
@@ -140,7 +134,7 @@ export type OrchestratorResult =
           tokensUsed: number;
           pipelineMs: number;
           requestId: string;
-          usedFallback: boolean; // true if generation fell back to gpt-3.5-turbo
+          usedFallback: boolean;
       }
     | {
           success: false;
@@ -150,7 +144,7 @@ export type OrchestratorResult =
       };
 
 /* ================================================================== */
-/*  Zod schemas — validate both non-fatal AI responses                 */
+/*  Zod schemas                                                         */
 /* ================================================================== */
 
 const KeywordResultSchema = z.object({
@@ -277,7 +271,7 @@ export async function runOrchestrator(
     // ── Step 2: Enrich input ─────────────────────────────────────────
     const enrichedInput = enrichInput(input, keywords);
 
-    // ── Step 3: Listing Generation (fatal, with fallback model) ──────
+    // ── Step 3: Listing Generation (fatal; fallback model on exhaustion) ──
     let listing: ListingOutput;
     let tokensUsed = 0;
     let usedFallback = false;
@@ -288,7 +282,6 @@ export async function runOrchestrator(
         listing = result.listing;
         tokensUsed = result.tokensUsed;
     } catch (primaryErr) {
-        // Primary model exhausted retries — try fallback model once
         log.warn(
             {
                 step: "generation.primary_failed",
@@ -444,7 +437,7 @@ async function callKeywordIntelligence(
         ],
     });
 
-    const raw = await callWithRetry(
+    const raw = await callWithRetry<string>(
         stepLog,
         "keyword_intelligence",
         async (model) => {
@@ -465,7 +458,7 @@ async function callKeywordIntelligence(
             if (!content) throw new Error("Empty response from OpenAI");
             return content;
         },
-        [KEYWORD_CONFIG.model], // no fallback for non-fatal steps
+        [KEYWORD_CONFIG.model],
     );
 
     let parsed: unknown;
@@ -499,10 +492,6 @@ async function callKeywordIntelligence(
 /*  Step 2 — Input Enrichment                                          */
 /* ================================================================== */
 
-/**
- * Injects AI-discovered keywords into GenerationInput.
- * Seller-provided values always take precedence — never overwrite.
- */
 function enrichInput(
     input: GenerationInput,
     keywords: KeywordResult | null,
@@ -511,12 +500,12 @@ function enrichInput(
 
     const enriched = { ...input };
 
-    // Primary keyword: fill gap if seller didn't provide one
+    // Primary keyword: fill gap only — never overwrite seller's choice
     if (!enriched.primaryKeyword?.trim()) {
         enriched.primaryKeyword = keywords.primaryKeyword;
     }
 
-    // Merge and deduplicate secondary keywords
+    // Merge, deduplicate, cap at 15 to keep prompt clean
     const discovered = [
         ...keywords.secondaryKeywords,
         ...keywords.platformTerms,
@@ -546,7 +535,16 @@ async function callListingGeneration(
 
     const { systemPrompt, userPrompt } = buildPrompt(input);
 
-    const raw = await callWithRetry(
+    // ── KEY FIX ──────────────────────────────────────────────────────
+    // callWithRetry<T> is generic. We return { content, tokensUsed }
+    // directly from the fn — no JSON wrapping/unwrapping needed.
+    // The test mocks return completion.choices[0].message.content as the
+    // listing JSON string, which we pass straight to parseGenerationResponse.
+    // ─────────────────────────────────────────────────────────────────
+    const { content, tokensUsed } = await callWithRetry<{
+        content: string;
+        tokensUsed: number;
+    }>(
         stepLog,
         "generation",
         async (m) => {
@@ -560,21 +558,18 @@ async function callListingGeneration(
                     { role: "user", content: userPrompt },
                 ],
             });
-            const content = completion.choices[0]?.message?.content;
-            const tokens = completion.usage?.total_tokens ?? 0;
-            if (!content)
+            const c = completion.choices[0]?.message?.content;
+            if (!c)
                 throw new Error(
                     "OpenAI returned an empty response. Please try again.",
                 );
-            return JSON.stringify({ content, tokens });
+            return {
+                content: c,
+                tokensUsed: completion.usage?.total_tokens ?? 0,
+            };
         },
         [model],
     );
-
-    const { content, tokens } = JSON.parse(raw) as {
-        content: string;
-        tokens: number;
-    };
 
     const parsed = parseGenerationResponse(content);
     if (!parsed.success) {
@@ -587,7 +582,7 @@ async function callListingGeneration(
         );
     }
 
-    return { listing: parsed.data, tokensUsed: tokens };
+    return { listing: parsed.data, tokensUsed };
 }
 
 /* ================================================================== */
@@ -614,7 +609,7 @@ async function callListingScore(
         },
     });
 
-    const raw = await callWithRetry(
+    const raw = await callWithRetry<string>(
         stepLog,
         "listing_score",
         async (model) => {
@@ -632,7 +627,7 @@ async function callListingScore(
             if (!content) throw new Error("Empty response from OpenAI");
             return content;
         },
-        [SCORE_CONFIG.model], // no fallback for non-fatal steps
+        [SCORE_CONFIG.model],
     );
 
     let parsed: unknown;
@@ -666,30 +661,13 @@ async function callListingScore(
 /*  Retry helper                                                        */
 /* ================================================================== */
 
-/**
- * callWithRetry
- *
- * Wraps an async AI call with:
- * - Up to RETRY_CONFIG.maxAttempts total attempts
- * - Exponential backoff (base 500ms → 1000ms → 2000ms)
- * - Retry only on transient errors (429, 500, 503)
- * - Immediate fail-fast on non-transient errors (401, 400, context_length)
- * - Structured log on every retry and final failure
- *
- * @param log      - RequestLogger with request context bound in
- * @param label    - human-readable step name for log messages
- * @param fn       - async call to execute, receives the model string
- * @param models   - ordered array: [primary] or [primary, fallback]
- *                   callWithRetry only handles retry within a single model.
- *                   Fallback model switching is the caller's responsibility.
- */
 async function callWithRetry<T>(
     log: RequestLogger,
     label: string,
     fn: (model: string) => Promise<T>,
     models: [string, ...string[]],
 ): Promise<T> {
-    const model = models[0]; // callWithRetry handles one model; caller switches model
+    const model = models[0];
     let lastError: unknown;
 
     for (let attempt = 1; attempt <= RETRY_CONFIG.maxAttempts; attempt++) {
@@ -714,7 +692,7 @@ async function callWithRetry<T>(
                 `[${label}] Attempt ${attempt}/${RETRY_CONFIG.maxAttempts} failed`,
             );
 
-            // Non-transient (401, 400, context_length) — fail immediately, no retry
+            // Non-transient (401, 400, context_length, unknown) — fail immediately
             if (!isTransient) {
                 log.error(
                     { label, status, code, err: toLogError(err) },
@@ -723,7 +701,6 @@ async function callWithRetry<T>(
                 throw err;
             }
 
-            // Exhausted retries
             if (attempt === RETRY_CONFIG.maxAttempts) {
                 log.error(
                     {
@@ -736,7 +713,6 @@ async function callWithRetry<T>(
                 throw err;
             }
 
-            // Exponential backoff before next attempt
             const delayMs = RETRY_CONFIG.baseDelayMs * Math.pow(2, attempt - 1);
             log.info(
                 { label, delayMs, nextAttempt: attempt + 1 },
@@ -773,14 +749,10 @@ function extractErrorInfo(err: unknown): { status?: number; code?: string } {
     };
 }
 
-/** Sanitizes error objects for structured logging — never log raw Error instances */
 function toLogError(err: unknown): Record<string, unknown> {
-    if (err instanceof Error) {
-        return { message: err.message, name: err.name };
-    }
-    if (typeof err === "object" && err !== null) {
+    if (err instanceof Error) return { message: err.message, name: err.name };
+    if (typeof err === "object" && err !== null)
         return err as Record<string, unknown>;
-    }
     return { message: String(err) };
 }
 

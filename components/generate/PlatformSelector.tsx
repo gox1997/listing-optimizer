@@ -50,7 +50,7 @@ export function PlatformSelector({ value, onChange, disabled }: Props) {
                         <span className="text-xl" aria-hidden="true">
                             {PLATFORM_ICONS[p.value]}
                         </span>
-                        <span className="text-xs font-semibold">{p.label}</span>
+                        <span className="text-sm font-semibold">{p.label}</span>
                         {isSelected && (
                             <Check
                                 className="absolute top-2 right-2 w-3.5 h-3.5 text-white"

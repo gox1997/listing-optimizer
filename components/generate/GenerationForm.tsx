@@ -11,17 +11,9 @@ import { cn } from "@/lib/utils/cn";
 import { Sparkles, Plus, X } from "lucide-react";
 import type { Platform, Tone } from "@/types";
 
-/* ------------------------------------------------------------------ */
-/*  Constants                                                           */
-/* ------------------------------------------------------------------ */
-
 const MAX_FEATURES = 10;
 const MAX_DESCRIPTION_LEN = 2000;
 const INITIAL_FEATURE_COUNT = 3;
-
-/* ------------------------------------------------------------------ */
-/*  Validation schema — mirrors server schema                          */
-/* ------------------------------------------------------------------ */
 
 const FormSchema = z.object({
     productName: z
@@ -42,18 +34,10 @@ const FormSchema = z.object({
 
 type FormState = z.infer<typeof FormSchema>;
 
-/* ------------------------------------------------------------------ */
-/*  Props                                                               */
-/* ------------------------------------------------------------------ */
-
 type Props = {
     defaultPlatform?: Platform;
     defaultTone?: Tone;
 };
-
-/* ------------------------------------------------------------------ */
-/*  Component                                                           */
-/* ------------------------------------------------------------------ */
 
 export function GenerationForm({
     defaultPlatform = "amazon",
@@ -68,7 +52,7 @@ export function GenerationForm({
         platform: defaultPlatform,
         tone: defaultTone,
         description: "",
-        features: Array(INITIAL_FEATURE_COUNT).fill("") as string[],
+        features: Array(INITIAL_FEATURE_COUNT).fill(""),
         primaryKeyword: "",
         keywords: "",
     } satisfies FormState);
@@ -78,8 +62,6 @@ export function GenerationForm({
     >({});
     const [globalError, setGlobalError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-
-    /* ── Updaters ───────────────────────────────────────────────────── */
 
     const update = useCallback(
         <K extends keyof FormState>(key: K, value: FormState[K]) =>
@@ -110,17 +92,13 @@ export function GenerationForm({
         }));
     }, []);
 
-    /* ── Submit ─────────────────────────────────────────────────────── */
-
     const handleSubmit = useCallback(async () => {
         if (isLoading) return;
 
         setFieldErrors({});
         setGlobalError(null);
 
-        // Client-side validation via Zod
         const parsed = FormSchema.safeParse(form);
-
         if (!parsed.success) {
             const errors: Partial<Record<keyof FormState, string>> = {};
             for (const err of parsed.error.errors) {
@@ -172,8 +150,6 @@ export function GenerationForm({
 
         router.push(`/generate/${result.data.generation.id}`);
     }, [form, isLoading, router]);
-
-    /* ── Render ─────────────────────────────────────────────────────── */
 
     return (
         <div className="space-y-8">
@@ -321,7 +297,7 @@ export function GenerationForm({
                             type="button"
                             onClick={addFeature}
                             disabled={isLoading}
-                            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 rounded"
+                            className="flex items-center gap-1.5 text-base text-slate-500 hover:text-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 rounded"
                         >
                             <Plus className="w-4 h-4" aria-hidden="true" />
                             Add feature
@@ -384,7 +360,7 @@ export function GenerationForm({
                 aria-busy={isLoading}
                 className={cn(
                     "w-full flex items-center justify-center gap-2 py-4",
-                    "bg-slate-900 text-white rounded-xl font-semibold text-sm",
+                    "bg-slate-900 text-white rounded-xl font-semibold font-mono text-base",
                     "hover:bg-slate-700 transition-colors",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2",
                     "disabled:opacity-60 disabled:cursor-not-allowed",
@@ -411,10 +387,6 @@ export function GenerationForm({
 
 GenerationForm.displayName = "GenerationForm";
 
-/* ------------------------------------------------------------------ */
-/*  FormSection                                                         */
-/* ------------------------------------------------------------------ */
-
 function FormSection({
     label,
     inputId,
@@ -436,20 +408,16 @@ function FormSection({
                 {inputId ? (
                     <label
                         htmlFor={inputId}
-                        className="text-base font-semibold text-slate-900"
+                        className="text-xl font-semibold font-mono text-slate-900"
                     >
                         {label}
                     </label>
                 ) : (
-                    <span className="text-base font-semibold text-slate-900">
+                    <span className="text-xl font-semibold font-mono text-slate-900">
                         {label}
                     </span>
                 )}
-                {required && (
-                    <span className="text-xs text-red-500" aria-hidden="true">
-                        *
-                    </span>
-                )}
+                {required && <span className="text-xs text-red-500">*</span>}
                 {hint && !error && (
                     <span className="text-xs text-slate-400 ml-1">{hint}</span>
                 )}
@@ -459,13 +427,9 @@ function FormSection({
     );
 }
 
-/* ------------------------------------------------------------------ */
-/*  inputClass                                                          */
-/* ------------------------------------------------------------------ */
-
 function inputClass(hasError: boolean) {
     return cn(
-        "w-full px-3 py-2.5 rounded-xl border text-sm text-slate-900",
+        "w-full px-3 py-2.5 rounded-xl border text-base text-slate-900",
         "placeholder:text-slate-400 transition-shadow",
         "focus:outline-none focus:ring-2 focus:ring-offset-0",
         "disabled:opacity-50 disabled:cursor-not-allowed",
