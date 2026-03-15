@@ -18,9 +18,9 @@ import {
     ChevronRight,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-
-import { ThemeToggle } from "../ui/theme-toggle";
+import { RiAiGenerate2 } from "react-icons/ri";
 import Image from "next/image";
+import { Icon } from "next/dist/lib/metadata/types/metadata-types";
 
 /* ------------------------------------------------------------------ */
 /*  Nav config                                                          */
@@ -226,7 +226,7 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
                             </span>
                         </div>
 
-                        <div className="h-1.5 bg-card rounded-full overflow-hidden border border-border">
+                        <div className="h-1.5 bg-sidebar-elite rounded-full overflow-hidden border border-border">
                             <div
                                 role="progressbar"
                                 aria-valuenow={used}
@@ -258,18 +258,6 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
                     </div>
                 </div>
             )}
-
-            {/* Divider */}
-            <div className="mx-4 h-px bg-muted" />
-
-            {/* Theme toggle + User row */}
-            {/* Theme toggle */}
-            <div className="px-5 py-2 flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">
-                    Appearance
-                </span>
-                <ThemeToggle />
-            </div>
 
             {/* Divider */}
             <div className="mx-4 h-px bg-muted" />
@@ -313,7 +301,7 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
         <>
             {/* Desktop */}
             <aside
-                className="hidden lg:flex flex-col w-60 shrink-0 border-r border-border bg-card h-screen sticky top-0"
+                className="hidden lg:block w-60 shrink-0 ml-1 my-2 h-[calc(100vh-1rem)] sticky top-2 rounded-xl border border-border bg-card shadow-lg"
                 aria-label="Sidebar"
             >
                 {sidebarContent(false)}

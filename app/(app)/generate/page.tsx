@@ -52,7 +52,7 @@ export default async function GeneratePage() {
                     </div>
 
                     {/* Usage badge */}
-                    <div className="shrink-0 text-right">
+                    <div className="shrink-0 text-right mt-3">
                         <p className="text-xs text-muted-foreground pt-12">
                             {stats.limit === Infinity ? (
                                 <span className="font-semibold text-foreground">
