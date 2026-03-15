@@ -253,7 +253,7 @@ export function GenerationForm({
                     maxLength={MAX_DESCRIPTION_LEN}
                     className={cn(inputClass(false), "resize-none")}
                 />
-                <p className="text-xs text-slate-400 text-right mt-1">
+                <p className="text-xs text-muted-foreground/70 text-right mt-1">
                     {(form.description ?? "").length}/{MAX_DESCRIPTION_LEN}
                 </p>
             </FormSection>
@@ -284,7 +284,7 @@ export function GenerationForm({
                                     onClick={() => removeFeature(i)}
                                     disabled={isLoading}
                                     aria-label={`Remove feature ${i + 1}`}
-                                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                                    className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 >
                                     <X className="w-4 h-4" aria-hidden="true" />
                                 </button>
@@ -297,7 +297,7 @@ export function GenerationForm({
                             type="button"
                             onClick={addFeature}
                             disabled={isLoading}
-                            className="flex items-center gap-1.5 text-base text-slate-500 hover:text-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 rounded"
+                            className="flex items-center gap-1.5 text-base text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                         >
                             <Plus className="w-4 h-4" aria-hidden="true" />
                             Add feature
@@ -360,9 +360,9 @@ export function GenerationForm({
                 aria-busy={isLoading}
                 className={cn(
                     "w-full flex items-center justify-center gap-2 py-4",
-                    "bg-slate-900 text-white rounded-xl font-semibold font-mono text-base",
-                    "hover:bg-slate-700 transition-colors",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2",
+                    "bg-primary text-primary-foreground rounded-xl font-semibold font-mono text-base",
+                    "hover:bg-primary/90 transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     "disabled:opacity-60 disabled:cursor-not-allowed",
                 )}
             >
@@ -408,18 +408,20 @@ function FormSection({
                 {inputId ? (
                     <label
                         htmlFor={inputId}
-                        className="text-xl font-semibold font-mono text-slate-900"
+                        className="text-xl font-semibold font-mono text-foreground"
                     >
                         {label}
                     </label>
                 ) : (
-                    <span className="text-xl font-semibold font-mono text-slate-900">
+                    <span className="text-xl font-semibold font-mono text-foreground">
                         {label}
                     </span>
                 )}
                 {required && <span className="text-xs text-red-500">*</span>}
                 {hint && !error && (
-                    <span className="text-xs text-slate-400 ml-1">{hint}</span>
+                    <span className="text-xs text-muted-foreground/70 ml-1">
+                        {hint}
+                    </span>
                 )}
             </div>
             {children}
@@ -429,12 +431,12 @@ function FormSection({
 
 function inputClass(hasError: boolean) {
     return cn(
-        "w-full px-3 py-2.5 rounded-xl border text-base text-slate-900",
-        "placeholder:text-slate-400 transition-shadow",
+        "w-full px-3 py-2.5 rounded-xl border text-base text-foreground",
+        "placeholder:text-muted-foreground/50 transition-shadow",
         "focus:outline-none focus:ring-2 focus:ring-offset-0",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         hasError
             ? "border-red-300 focus:ring-red-500"
-            : "border-slate-200 focus:ring-slate-900 focus:border-transparent",
+            : "border-border focus:ring-ring focus:border-transparent",
     );
 }

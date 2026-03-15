@@ -44,7 +44,7 @@ export function GenerationResult({ generation }: Props) {
 
     if (!output) {
         return (
-            <div className="text-center py-16 text-slate-400 text-sm">
+            <div className="text-center py-16 text-muted-foreground/70 text-sm">
                 Generation output is unavailable.
             </div>
         );
@@ -59,13 +59,13 @@ export function GenerationResult({ generation }: Props) {
                 <button
                     type="button"
                     onClick={() => router.back()}
-                    className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 rounded"
+                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                 >
                     <ArrowLeft className="w-4 h-4" aria-hidden="true" />
                     Back
                 </button>
 
-                <div className="flex items-center gap-2 text-xs text-slate-400">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
                     <span className="capitalize">{generation.platform}</span>
                     <span>·</span>
                     <span className="capitalize">{generation.tone}</span>
@@ -82,10 +82,10 @@ export function GenerationResult({ generation }: Props) {
                 copyText={output.seoTitle}
                 copyLabel="title"
             >
-                <p className="text-base font-medium text-slate-900 leading-relaxed">
+                <p className="text-base font-medium text-foreground leading-relaxed">
                     {output.seoTitle}
                 </p>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-muted-foreground/70 mt-1">
                     {output.seoTitle.length} characters
                 </p>
             </ResultCard>
@@ -102,13 +102,13 @@ export function GenerationResult({ generation }: Props) {
                     {output.bulletPoints.map((bullet, i) => (
                         <li key={i} className="flex gap-2 group">
                             <span
-                                className="shrink-0 w-5 h-5 rounded-full bg-slate-100 text-slate-500 text-xs flex items-center justify-center font-semibold mt-0.5"
+                                className="shrink-0 w-5 h-5 rounded-full bg-muted text-muted-foreground text-xs flex items-center justify-center font-semibold mt-0.5"
                                 aria-hidden="true"
                             >
                                 {i + 1}
                             </span>
                             <div className="flex-1 flex items-start justify-between gap-2">
-                                <p className="text-base text-slate-700 leading-relaxed">
+                                <p className="text-base text-muted-foreground leading-relaxed">
                                     {bullet}
                                 </p>
                                 <CopyButton
@@ -132,7 +132,7 @@ export function GenerationResult({ generation }: Props) {
             >
                 <div
                     id="description-body"
-                    className="text-base text-slate-700 leading-relaxed whitespace-pre-wrap"
+                    className="text-base text-muted-foreground leading-relaxed whitespace-pre-wrap"
                 >
                     {needsExpand && !descExpanded
                         ? shortDescription + "..."
@@ -145,7 +145,7 @@ export function GenerationResult({ generation }: Props) {
                         aria-expanded={descExpanded}
                         aria-controls="description-body"
                         onClick={() => setDescExpanded((v) => !v)}
-                        className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 rounded"
+                        className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                     >
                         {descExpanded ? (
                             <>
@@ -167,7 +167,9 @@ export function GenerationResult({ generation }: Props) {
                     </button>
                 )}
 
-                <p className="text-xs text-slate-400 mt-2">{wordCount} words</p>
+                <p className="text-xs text-muted-foreground/70 mt-2">
+                    {wordCount} words
+                </p>
             </ResultCard>
 
             {/* Meta Description */}
@@ -178,7 +180,7 @@ export function GenerationResult({ generation }: Props) {
                 copyText={output.metaDescription}
                 copyLabel="meta description"
             >
-                <p className="text-base text-slate-700 leading-relaxed">
+                <p className="text-base text-muted-foreground leading-relaxed">
                     {output.metaDescription}
                 </p>
                 <p
@@ -186,7 +188,7 @@ export function GenerationResult({ generation }: Props) {
                         "text-xs mt-1",
                         output.metaDescription.length > 160
                             ? "text-red-500"
-                            : "text-slate-400",
+                            : "text-muted-foreground/70",
                     )}
                 >
                     {output.metaDescription.length}/160 characters
@@ -205,18 +207,18 @@ export function GenerationResult({ generation }: Props) {
                     {output.tags.map((tag, i) => (
                         <li
                             key={i}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-medium"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted text-muted-foreground rounded-lg text-xs font-medium"
                         >
                             {tag}
                             <CopyButton
                                 text={tag}
                                 label={tag}
-                                className="border-0 bg-transparent p-0 hover:bg-transparent text-slate-400 hover:text-slate-700"
+                                className="border-0 bg-transparent p-0 hover:bg-transparent text-muted-foreground hover:text-foreground"
                             />
                         </li>
                     ))}
                 </ul>
-                <p className="text-xs text-slate-400 mt-2">
+                <p className="text-xs text-muted-foreground/70 mt-2">
                     {output.tags.length} tags
                 </p>
             </ResultCard>
@@ -226,10 +228,10 @@ export function GenerationResult({ generation }: Props) {
                 href="/generate"
                 className={cn(
                     "w-full flex items-center justify-center gap-2 py-3 mt-2",
-                    "border-2 border-dashed border-slate-200 rounded-xl",
-                    "text-sm font-medium text-slate-500",
-                    "hover:border-slate-900 hover:text-slate-900 transition-colors",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900",
+                    "border-2 border-dashed border-border rounded-xl",
+                    "text-sm font-medium text-muted-foreground",
+                    "hover:border-primary hover:text-foreground transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 )}
             >
                 <Sparkles className="w-4 h-4" aria-hidden="true" />
@@ -261,14 +263,14 @@ function ResultCard({
     return (
         <section
             aria-labelledby={headingId}
-            className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"
+            className="bg-card border border-border rounded-2xl p-5 shadow-sm"
         >
             <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2 text-slate-500">
+                <div className="flex items-center gap-2 text-muted-foreground">
                     <span aria-hidden="true">{icon}</span>
                     <h2
                         id={headingId}
-                        className="text-xs font-semibold uppercase tracking-wider text-slate-500"
+                        className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                     >
                         {label}
                     </h2>

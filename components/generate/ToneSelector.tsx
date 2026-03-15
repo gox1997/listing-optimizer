@@ -34,11 +34,11 @@ export function ToneSelector({ value, onChange, disabled }: Props) {
                             onClick={() => onChange(t.value)}
                             className={cn(
                                 "px-3 py-1.5 rounded-lg border-2 text-xs font-semibold transition-all duration-150",
-                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                                 "disabled:opacity-50 disabled:cursor-not-allowed",
                                 value === t.value
-                                    ? "border-slate-900 bg-slate-900 text-white"
-                                    : "border-slate-200 hover:border-slate-300 text-slate-600",
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-border hover:border-primary/50 text-muted-foreground",
                             )}
                         >
                             {t.label}

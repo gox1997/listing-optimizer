@@ -58,13 +58,13 @@ export function CopyButton({ text, label, className }: Props) {
             className={cn(
                 "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg",
                 "text-xs font-medium transition-all duration-150",
-                "active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-1",
+                "active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 // Increase tap target on mobile
                 "min-h-8 min-w-8",
                 copied
                     ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    : "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200",
+                    : "bg-muted text-muted-foreground border border-border hover:bg-muted-foreground/20",
                 className,
             )}
         >

@@ -41,11 +41,11 @@ export default async function GeneratePage() {
                 {/* Page header */}
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                            <Sparkles className="w-5 h-5" aria-hidden="true" />
+                        <Sparkles className="w-5 h-5" aria-hidden="true" />
+                        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
                             Generate Listing
                         </h1>
-                        <p className="text-slate-500 text-sm mt-1">
+                        <p className="text-muted-foreground text-sm sm:text-base font-mono mt-1">
                             Fill in your product details and let the AI do the
                             rest.
                         </p>
@@ -53,14 +53,14 @@ export default async function GeneratePage() {
 
                     {/* Usage badge */}
                     <div className="shrink-0 text-right">
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-muted-foreground pt-12">
                             {stats.limit === Infinity ? (
-                                <span className="font-semibold text-slate-900">
+                                <span className="font-semibold text-foreground">
                                     Unlimited
                                 </span>
                             ) : (
                                 <>
-                                    <span className="font-semibold text-slate-900">
+                                    <span className="font-semibold text-foreground">
                                         {stats.used}
                                     </span>
                                     {" / "}
@@ -69,7 +69,7 @@ export default async function GeneratePage() {
                             )}
                         </p>
                         {stats.limit !== Infinity && (
-                            <div className="w-28 h-1.5 bg-slate-200 rounded-full mt-1.5 overflow-hidden">
+                            <div className="w-28 h-1.5 bg-muted rounded-full mt-1.5 overflow-hidden">
                                 <div
                                     className={`h-full rounded-full transition-all ${
                                         usagePercent >= 90
@@ -110,7 +110,7 @@ export default async function GeneratePage() {
                 )}
 
                 {/* Form */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
                     <GenerationForm
                         defaultPlatform={defaultPlatform}
                         defaultTone={defaultTone}

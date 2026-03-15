@@ -90,22 +90,22 @@ export default async function HistoryPage({ searchParams }: Props) {
 
             {/* Empty state */}
             {generations.length === 0 && (
-                <div className="text-center py-20 bg-white border border-slate-200 rounded-2xl">
-                    <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <div className="text-center py-20 bg-card border border-border rounded-2xl">
+                    <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
                         <Sparkles
-                            className="w-6 h-6 text-slate-400"
+                            className="w-6 h-6 text-muted-foreground"
                             aria-hidden="true"
                         />
                     </div>
-                    <p className="font-semibold text-slate-900">
+                    <p className="font-semibold text-base sm:text-lg text-foreground">
                         No listings yet
                     </p>
-                    <p className="text-slate-500 text-sm mt-1 mb-6">
+                    <p className="text-muted-foreground text-sm sm:text-base mt-1 mb-6 pl-2 pr-2 pb-4">
                         Generate your first listing to see it here.
                     </p>
                     <Link
                         href="/generate"
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-base sm:text-lg font-semibold hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                         <Sparkles className="w-4 h-4" aria-hidden="true" />
                         Generate a listing
@@ -120,27 +120,27 @@ export default async function HistoryPage({ searchParams }: Props) {
                         <li key={gen.id}>
                             <Link
                                 href={`/generate/${gen.id}`}
-                                className="block bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-slate-300 hover:shadow-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                                className="block bg-card border border-border rounded-2xl p-5 shadow-sm hover:border-primary/50 hover:shadow-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-slate-900 truncate">
+                                        <p className="font-semibold text-foreground truncate">
                                             {gen.product_name}
                                         </p>
-                                        <p className="text-sm text-slate-500 mt-0.5 truncate">
+                                        <p className="text-sm text-muted-foreground mt-0.5 truncate">
                                             {gen.output_data?.seoTitle ?? "—"}
                                         </p>
                                     </div>
                                     <time
                                         dateTime={gen.created_at}
-                                        className="shrink-0 text-xs text-slate-400 mt-0.5"
+                                        className="shrink-0 text-xs text-muted-foreground/70 mt-0.5"
                                     >
                                         {formatRelativeTime(gen.created_at)}
                                     </time>
                                 </div>
 
                                 <div className="flex items-center gap-2 mt-3 flex-wrap">
-                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-xs font-medium">
+                                    <span className="px-2 py-0.5 bg-muted text-muted-foreground rounded-md text-xs font-medium">
                                         {PLATFORM_LABELS[gen.platform] ??
                                             gen.platform}
                                     </span>
@@ -148,13 +148,13 @@ export default async function HistoryPage({ searchParams }: Props) {
                                         className={cn(
                                             "px-2 py-0.5 rounded-md text-xs font-medium capitalize",
                                             TONE_COLORS[gen.tone] ??
-                                                "bg-slate-100 text-slate-600",
+                                                "bg-muted text-muted-foreground",
                                         )}
                                     >
                                         {gen.tone}
                                     </span>
                                     {gen.primary_keyword && (
-                                        <span className="px-2 py-0.5 bg-slate-50 text-slate-500 rounded-md text-xs border border-slate-200 truncate max-w-40">
+                                        <span className="px-2 py-0.5 bg-muted/50 text-muted-foreground rounded-md text-xs border border-border truncate max-w-40">
                                             {gen.primary_keyword}
                                         </span>
                                     )}
@@ -178,13 +178,13 @@ export default async function HistoryPage({ searchParams }: Props) {
                         Previous
                     </PaginationLink>
 
-                    <span className="text-base text-slate-500">
+                    <span className="text-base text-muted-foreground">
                         Page{" "}
-                        <span className="font-semibold text-slate-900">
+                        <span className="font-semibold text-foreground">
                             {page}
                         </span>{" "}
                         of{" "}
-                        <span className="font-semibold text-slate-900">
+                        <span className="font-semibold text-foreground">
                             {totalPages}
                         </span>
                     </span>
@@ -209,11 +209,11 @@ function PageHeader({ total }: { total: number }) {
     return (
         <div className="flex items-center justify-between">
             <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 flex items-center gap-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
                     <History className="w-5 h-5" aria-hidden="true" />
                     History
                 </h1>
-                <p className="text-slate-500 text-base mt-1">
+                <p className="text-muted-foreground text-base mt-1">
                     {total > 0
                         ? `${total} listing${total === 1 ? "" : "s"} generated`
                         : "No generations yet"}
@@ -221,7 +221,7 @@ function PageHeader({ total }: { total: number }) {
             </div>
             <Link
                 href="/generate"
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-xl text-base font-semibold hover:bg-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-base sm:text-lg font-semibold hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
                 <Sparkles className="w-4 h-4" aria-hidden="true" />
                 New
@@ -245,11 +245,11 @@ function PaginationLink({
             aria-disabled={disabled}
             tabIndex={disabled ? -1 : undefined}
             className={cn(
-                "px-4 py-2 rounded-xl border border-slate-200 text-base font-medium transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900",
+                "px-4 py-2 rounded-xl border border-border text-base font-medium transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 disabled
                     ? "opacity-40 pointer-events-none"
-                    : "hover:bg-slate-50 text-slate-700",
+                    : "hover:bg-muted text-muted-foreground",
             )}
         >
             {children}

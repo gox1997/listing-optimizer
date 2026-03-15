@@ -19,7 +19,7 @@ export default async function AppLayout({
     const [profileResult, stats] = await Promise.all([
         supabase
             .from("user_profiles")
-            .select("display_name, email")
+            .select("full_name, email")
             .eq("id", user.id)
             .single(),
         getUsageStats(user.id).catch(() => ({
@@ -33,14 +33,14 @@ export default async function AppLayout({
         })),
     ]);
 
-    const displayName = profileResult.data?.display_name ?? "";
+    const fullName = profileResult.data?.full_name ?? "";
     const userEmail = profileResult.data?.email ?? user.email ?? "";
 
     return (
-        <div className="flex min-h-screen bg-slate-50">
+        <div className="flex min-h-screen bg-linear-to-b from-muted via-amber-500/10 to-muted">
             <Sidebar
                 userEmail={userEmail}
-                displayName={displayName}
+                displayName={fullName}
                 plan={stats.plan}
                 used={stats.used}
                 limit={stats.limit}

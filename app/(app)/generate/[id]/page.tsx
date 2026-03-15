@@ -62,12 +62,12 @@ export default async function GenerationPage({ params }: Props) {
             <div className="max-w-2xl mx-auto">
                 <div
                     role="alert"
-                    className="text-center py-20 bg-white border border-red-100 rounded-2xl"
+                    className="text-center py-20 bg-card border border-red-100 rounded-2xl"
                 >
-                    <p className="font-semibold text-slate-900">
+                    <p className="font-semibold text-foreground">
                         Failed to load generation
                     </p>
-                    <p className="text-slate-500 text-sm mt-1">
+                    <p className="text-muted-foreground text-sm mt-1">
                         Please try again or contact support.
                     </p>
                 </div>

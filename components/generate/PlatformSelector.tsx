@@ -1,10 +1,13 @@
 // components/generate/PlatformSelector.tsx
 "use client";
 
+import Image from "next/image";
+
 import { PLATFORMS } from "@/config/platforms";
 import { cn } from "@/lib/utils/cn";
 import { Check } from "lucide-react";
 import type { Platform } from "@/types";
+import { SlGlobe } from "react-icons/sl";
 
 type Props = {
     value: Platform;
@@ -12,11 +15,41 @@ type Props = {
     disabled?: boolean;
 };
 
-const PLATFORM_ICONS: Record<Platform, string> = {
-    amazon: "🛒",
-    shopify: "🏪",
-    etsy: "✂️",
-    general: "🌐",
+// Map platform to React component (icon)
+const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
+    amazon: (
+        <Image
+            src="/amazon-icon.svg"
+            alt="Amazon"
+            width={20}
+            height={20}
+            className="w-5 h-5"
+            aria-hidden="true"
+        />
+    ),
+    shopify: (
+        <Image
+            src="/shopify-icon.svg"
+            alt="Shopify"
+            width={20}
+            height={20}
+            className="w-5 h-5"
+            aria-hidden="true"
+        />
+    ),
+    etsy: (
+        <Image
+            src="/etsy-icon.svg"
+            alt="Etsy"
+            width={20}
+            height={20}
+            className="w-5 h-5"
+            aria-hidden="true"
+        />
+    ),
+    general: (
+        <SlGlobe color="blue" width={20} height={20} className="w-5 h-5" />
+    ),
 };
 
 export function PlatformSelector({ value, onChange, disabled }: Props) {
@@ -40,14 +73,17 @@ export function PlatformSelector({ value, onChange, disabled }: Props) {
                             "relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2",
                             "text-center transition-all duration-150",
                             "hover:scale-[1.02] active:scale-[0.98]",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                             "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
                             isSelected
-                                ? "border-slate-900 bg-slate-900 text-white"
-                                : "border-slate-200 hover:border-slate-300 text-slate-700",
+                                ? "border-primary bg-muted text-foreground"
+                                : "border-border hover:border-primary/50 text-muted-foreground",
                         )}
                     >
-                        <span className="text-xl" aria-hidden="true">
+                        <span
+                            className="flex items-center justify-center"
+                            aria-hidden="true"
+                        >
                             {PLATFORM_ICONS[p.value]}
                         </span>
                         <span className="text-sm font-semibold">{p.label}</span>
