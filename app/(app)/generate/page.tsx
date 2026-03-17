@@ -4,37 +4,32 @@ import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { GenerationForm } from "@/components/generate/GenerationForm";
 import { getUsageStats } from "@/services/usage.service";
+import { getUserProfile } from "@/services/user.service";
 import { Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
 import type { Platform, Tone } from "@/types";
 
 export default async function GeneratePage() {
     const supabase = await createServerSupabaseClient();
     const {
         data: { user },
-        error: authError,
     } = await supabase.auth.getUser();
 
-    if (authError || !user) {
-        redirect("/auth");
-    }
+    if (!user) redirect("/auth");
 
     try {
-        const [profileResult, stats] = await Promise.all([
-            supabase
-                .from("user_profiles")
-                .select("default_platform, default_tone")
-                .eq("id", user.id)
-                .single(),
+        const [profile, stats] = await Promise.all([
+            getUserProfile(user.id),
             getUsageStats(user.id),
         ]);
 
-        const defaultPlatform = (profileResult.data?.default_platform ??
+        const defaultPlatform = (profile?.defaultPlatform ??
             "amazon") as Platform;
-        const defaultTone = (profileResult.data?.default_tone ??
-            "professional") as Tone;
+        const defaultTone = (profile?.defaultTone ?? "professional") as Tone;
 
         const isAtLimit = !stats.allowed;
-        const usagePercent = stats.percentUsed; // already clamped 0-100 by the service
+        const isNearLimit = stats.percentUsed >= 60 && !isAtLimit;
+        const usagePercent = stats.percentUsed;
 
         return (
             <div className="max-w-2xl mx-auto space-y-6">
@@ -54,55 +49,67 @@ export default async function GeneratePage() {
                     {/* Usage badge */}
                     <div className="shrink-0 text-right mt-3">
                         <p className="text-xs text-muted-foreground pt-12">
-                            {stats.limit === Infinity ? (
-                                <span className="font-semibold text-foreground">
-                                    Unlimited
-                                </span>
-                            ) : (
-                                <>
-                                    <span className="font-semibold text-foreground">
-                                        {stats.used}
-                                    </span>
-                                    {" / "}
-                                    {stats.limit} used
-                                </>
-                            )}
+                            <span className="font-semibold text-foreground">
+                                {stats.used}
+                            </span>
+                            {" / "}
+                            {stats.limit} used
                         </p>
-                        {stats.limit !== Infinity && (
-                            <div className="w-28 h-1.5 bg-muted rounded-full mt-1.5 overflow-hidden">
-                                <div
-                                    className={`h-full rounded-full transition-all ${
-                                        usagePercent >= 90
-                                            ? "bg-red-500"
-                                            : usagePercent >= 70
-                                              ? "bg-amber-500"
-                                              : "bg-emerald-500"
-                                    }`}
-                                    style={{ width: `${usagePercent}%` }}
-                                    role="progressbar"
-                                    aria-valuenow={stats.used}
-                                    aria-valuemin={0}
-                                    aria-valuemax={stats.limit}
-                                    aria-label="Generation usage"
-                                />
-                            </div>
-                        )}
+                        <div className="w-28 h-1.5 bg-muted rounded-full mt-1.5 overflow-hidden">
+                            <div
+                                className={cn(
+                                    "h-full rounded-full transition-all",
+                                    isAtLimit
+                                        ? "bg-red-500"
+                                        : isNearLimit
+                                          ? "bg-amber-500"
+                                          : "bg-emerald-500",
+                                )}
+                                style={{ width: `${usagePercent}%` }}
+                                role="progressbar"
+                                aria-valuenow={stats.used}
+                                aria-valuemin={0}
+                                aria-valuemax={stats.limit}
+                                aria-label="Generation usage"
+                            />
+                        </div>
                     </div>
                 </div>
 
-                {/* At-limit banner */}
-                {isAtLimit && (
+                {/* Near-limit / at-limit banner */}
+                {(isAtLimit || isNearLimit) && (
                     <div
                         role="alert"
-                        className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800 flex items-center justify-between gap-4"
+                        className={cn(
+                            "p-4 rounded-xl text-sm flex items-center justify-between gap-4",
+                            isAtLimit
+                                ? "bg-red-50 border border-red-200 text-red-800"
+                                : "bg-amber-50 border border-amber-200 text-amber-800",
+                        )}
                     >
                         <p>
-                            You&apos;ve used all <strong>{stats.limit}</strong>{" "}
-                            generations for this month.
+                            {isAtLimit ? (
+                                <>
+                                    You&apos;ve used all{" "}
+                                    <strong>{stats.limit}</strong> generations
+                                    this month.
+                                </>
+                            ) : (
+                                <>
+                                    You&apos;ve used {usagePercent}% of your
+                                    monthly generations.
+                                </>
+                            )}{" "}
+                            Upgrade to keep generating.
                         </p>
                         <Link
                             href="/upgrade"
-                            className="shrink-0 px-3 py-1.5 bg-amber-800 text-white rounded-lg text-xs font-semibold hover:bg-amber-700 transition-colors"
+                            className={cn(
+                                "shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+                                isAtLimit
+                                    ? "bg-red-700 text-white hover:bg-red-600"
+                                    : "bg-amber-700 text-white hover:bg-amber-600",
+                            )}
                         >
                             Upgrade
                         </Link>
@@ -120,7 +127,6 @@ export default async function GeneratePage() {
         );
     } catch (error) {
         console.error("[GeneratePage] Failed to load data:", error);
-        // You can throw a custom error or render a fallback
         throw new Error(
             "Unable to load the generation page. Please try again.",
         );

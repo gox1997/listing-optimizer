@@ -133,16 +133,14 @@ export function GenerationForm({
         );
 
         if (!result.success) {
-            // @ts-expect-error — code is present on generation errors
-            if (result.error?.code === "quota_exceeded") {
+            if (result.error?.code === "QUOTA_EXCEEDED") {
                 router.push("/upgrade?reason=quota");
                 return;
             }
             console.error("[GenerationForm] Generation failed:", result.error);
             setGlobalError(
-                typeof result.error === "string"
-                    ? result.error
-                    : "Something went wrong. Please try again.",
+                result.error?.message ??
+                    "Something went wrong. Please try again.",
             );
             setIsLoading(false);
             return;
