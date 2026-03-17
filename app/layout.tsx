@@ -15,11 +15,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
     title: {
-        default: "ListingBull — AI Listing Optimizer",
+        default: "ListingBull — AI Listing Optimizer for Ecommerce Platforms",
         template: "%s — ListingBull",
     },
     description:
-        "Generate high-converting product listings optimized for Amazon, Shopify, Etsy and more. AI-powered SEO titles, bullet points, descriptions and tags in seconds.",
+        "Generate high-converting product listings optimized for Amazon, Shopify, Etsy and ecommerce platforms. AI-powered SEO titles, bullet points, descriptions and tags in seconds. AI-powered product listings that rank higher and convert better across Amazon, Shopify, Etsy.",
     metadataBase: new URL(
         process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
     ),
