@@ -2,96 +2,127 @@ import type { Plan } from "@/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PLAN LIMITS
-// The single source of truth for what each plan is allowed to do.
-// Read by: usage.service.ts (quota check), UI (usage indicator, upgrade modal)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const PLAN_LIMITS: Record<Plan, number> = {
-    free: 5, // 5 generations / month — enough to experience value, tight enough to convert
-    pro: 100, // 100 generations / month
-    business: 500, // 500 generations / month
-    agency: 2000, // 2000 generations / month
+    free: 5,
+    starter: 30,
+    pro: 100,
+    growth: 300,
+    business: 800,
+    agency: 2000,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PLAN METADATA
-// Display copy and feature lists — used by pricing page and upgrade modal.
 // ─────────────────────────────────────────────────────────────────────────────
-
+export const PLAN_ORDER: Plan[] = [
+    "free",
+    "starter",
+    "pro",
+    "growth",
+    "business",
+    "agency",
+];
 export type PlanMetadata = {
     name: string;
     tagline: string;
-    monthlyPrice: number; // USD — 0 for free
-    yearlyPrice: number; // USD — 0 for free (billed annually)
+    monthlyPrice: number;
+    yearlyPrice: number;
     generationsPerMonth: number;
     features: string[];
-    highlighted: boolean; // Show "Most popular" badge
+    highlighted: boolean;
     ctaLabel: string;
 };
 
 export const PLAN_METADATA: Record<Plan, PlanMetadata> = {
     free: {
         name: "Free",
-        tagline: "Try it out",
+        tagline: "Try the product",
         monthlyPrice: 0,
         yearlyPrice: 0,
         generationsPerMonth: PLAN_LIMITS.free,
         features: [
-            `${PLAN_LIMITS.free} listings per month`,
-            "All 4 platforms (Amazon, Shopify, Etsy, General)",
+            "5 listings per month",
+            "All 4 platforms",
             "All 5 tones",
             "SEO title, bullets, description, tags",
-            "Generation history (last 10)",
         ],
         highlighted: false,
         ctaLabel: "Get started free",
     },
+    starter: {
+        name: "Starter",
+        tagline: "Small sellers",
+        monthlyPrice: 15,
+        yearlyPrice: 12,
+        generationsPerMonth: PLAN_LIMITS.starter,
+        features: [
+            "30 listings per month",
+            "Everything in Free",
+            "Listing Score (quality audit)",
+        ],
+        highlighted: false,
+        ctaLabel: "Start Starter",
+    },
     pro: {
         name: "Pro",
-        tagline: "For serious sellers",
-        monthlyPrice: 19,
-        yearlyPrice: 15, // per month billed annually → $180/yr
+        tagline: "Your money printer",
+        monthlyPrice: 29,
+        yearlyPrice: 23,
         generationsPerMonth: PLAN_LIMITS.pro,
         features: [
-            `${PLAN_LIMITS.pro} listings per month`,
-            "Everything in Free",
-            "Keyword Intelligence (AI keyword research)",
-            "Listing Score (quality audit)",
+            "100 listings per month",
+            "Everything in Starter",
+            "Keyword Intelligence (AI research)",
             "Full generation history",
-            "Priority support",
+            "5 variations per generation",
         ],
         highlighted: true,
         ctaLabel: "Start Pro",
     },
+    growth: {
+        name: "Growth",
+        tagline: "Scaling stores",
+        monthlyPrice: 59,
+        yearlyPrice: 47,
+        generationsPerMonth: PLAN_LIMITS.growth,
+        features: [
+            "300 listings per month",
+            "Everything in Pro",
+            "Bulk generation (CSV upload)",
+            "Faster generation speed",
+        ],
+        highlighted: false,
+        ctaLabel: "Start Growth",
+    },
     business: {
         name: "Business",
-        tagline: "For growing brands",
-        monthlyPrice: 49,
-        yearlyPrice: 39, // per month billed annually → $468/yr
+        tagline: "Serious brands",
+        monthlyPrice: 99,
+        yearlyPrice: 79,
         generationsPerMonth: PLAN_LIMITS.business,
         features: [
-            `${PLAN_LIMITS.business} listings per month`,
-            "Everything in Pro",
-            "Bulk generation (coming soon)",
+            "800 listings per month",
+            "Everything in Growth",
             "CSV export",
-            "API access (coming soon)",
-            "Dedicated support",
+            "API access",
+            "Priority queue",
         ],
         highlighted: false,
         ctaLabel: "Start Business",
     },
     agency: {
         name: "Agency",
-        tagline: "For agencies and power users",
-        monthlyPrice: 149,
-        yearlyPrice: 119, // per month billed annually → $1,428/yr
+        tagline: "Teams & agencies",
+        monthlyPrice: 199,
+        yearlyPrice: 159,
         generationsPerMonth: PLAN_LIMITS.agency,
         features: [
-            `${PLAN_LIMITS.agency} listings per month`,
+            "2000 listings per month",
             "Everything in Business",
-            "Team members (coming soon)",
-            "White-label export (coming soon)",
-            "Custom tone profiles (coming soon)",
+            "Team seats (up to 10 users)",
+            "Shared workspace",
             "SLA support",
         ],
         highlighted: false,
@@ -101,18 +132,25 @@ export const PLAN_METADATA: Record<Plan, PlanMetadata> = {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STRIPE PRICE IDs
-// Placeholder until Stripe products are created.
-// Replace with real IDs from the Stripe dashboard.
-// Pattern: price_XXXXXXXXXXXXXXXXXXXXXXXX
 // ─────────────────────────────────────────────────────────────────────────────
 
+type PaidPlan = Exclude<Plan, "free">;
+
 export const STRIPE_PRICE_IDS: Record<
-    Exclude<Plan, "free">,
+    PaidPlan,
     { monthly: string; yearly: string }
 > = {
+    starter: {
+        monthly: process.env.STRIPE_STARTER_MONTHLY_PRICE_ID ?? "",
+        yearly: process.env.STRIPE_STARTER_YEARLY_PRICE_ID ?? "",
+    },
     pro: {
         monthly: process.env.STRIPE_PRO_MONTHLY_PRICE_ID ?? "",
         yearly: process.env.STRIPE_PRO_YEARLY_PRICE_ID ?? "",
+    },
+    growth: {
+        monthly: process.env.STRIPE_GROWTH_MONTHLY_PRICE_ID ?? "",
+        yearly: process.env.STRIPE_GROWTH_YEARLY_PRICE_ID ?? "",
     },
     business: {
         monthly: process.env.STRIPE_BUSINESS_MONTHLY_PRICE_ID ?? "",
@@ -128,23 +166,36 @@ export const STRIPE_PRICE_IDS: Record<
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Returns the generation limit for a given plan */
 export function getPlanLimit(plan: Plan): number {
     return PLAN_LIMITS[plan];
 }
 
-/** Returns true if this plan has access to Keyword Intelligence */
-export function hasKeywordIntelligence(plan: Plan): boolean {
-    return plan === "pro" || plan === "business" || plan === "agency";
-}
-
-/** Returns true if this plan has access to Listing Score */
 export function hasListingScore(plan: Plan): boolean {
-    return plan === "pro" || plan === "business" || plan === "agency";
+    return plan !== "free";
 }
 
-/** Returns savings percentage for annual billing */
-export function annualSavingsPercent(plan: Exclude<Plan, "free">): number {
+export function hasKeywordIntelligence(plan: Plan): boolean {
+    return (
+        plan === "pro" ||
+        plan === "growth" ||
+        plan === "business" ||
+        plan === "agency"
+    );
+}
+
+export function hasBulkGeneration(plan: Plan): boolean {
+    return plan === "growth" || plan === "business" || plan === "agency";
+}
+
+export function hasApiAccess(plan: Plan): boolean {
+    return plan === "business" || plan === "agency";
+}
+
+export function hasTeamSeats(plan: Plan): boolean {
+    return plan === "agency";
+}
+
+export function annualSavingsPercent(plan: PaidPlan): number {
     const meta = PLAN_METADATA[plan];
     const annualAtMonthly = meta.monthlyPrice * 12;
     const annualActual = meta.yearlyPrice * 12;

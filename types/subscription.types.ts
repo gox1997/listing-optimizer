@@ -1,6 +1,12 @@
 // The four plans we offer
 // Matches exactly the keys in config/plans.ts
-export type Plan = "free" | "pro" | "business" | "agency";
+export type Plan =
+    | "free"
+    | "starter"
+    | "pro"
+    | "growth"
+    | "business"
+    | "agency";
 
 // Mirrors Stripe's subscription status values exactly
 // We store this in our DB so we don't have to call Stripe on every request
