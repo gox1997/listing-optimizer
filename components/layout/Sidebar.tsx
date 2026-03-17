@@ -16,6 +16,7 @@ import {
     X,
     Zap,
     ChevronRight,
+    Gem,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Image from "next/image";
@@ -47,6 +48,11 @@ const NAV_ITEMS: NavItem[] = [
         href: "/history",
         label: "History",
         icon: History,
+    },
+    {
+        href: "/pricing",
+        label: "Pricing",
+        icon: Gem,
     },
 ];
 

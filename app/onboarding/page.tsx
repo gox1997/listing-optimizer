@@ -79,7 +79,7 @@ export default function OnboardingPage() {
     const progressWidth = `${(step / TOTAL_STEPS) * 100}%`;
 
     return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-linear-to-b from-muted via-amber-500/10 to-muted flex items-center justify-center p-4">
             <div className="w-full max-w-lg">
                 {/* Logo */}
                 <div className="text-center mb-8">
@@ -89,7 +89,7 @@ export default function OnboardingPage() {
                     <h1 className="text-2xl font-bold text-slate-900">
                         Welcome aboard!
                     </h1>
-                    <p className="text-slate-500 text-sm mt-1">
+                    <p className="text-slate-500 text-sm sm:text-base mt-1">
                         Quick setup — 3 questions to personalize your experience
                     </p>
                 </div>
@@ -264,8 +264,10 @@ export default function OnboardingPage() {
                                         "Saving..."
                                     ) : (
                                         <>
-                                            <Sparkles className="w-4 h-4" />{" "}
-                                            Start Generating
+                                            <Sparkles className="w-4 h-4 ml-1" />{" "}
+                                            <span className="mr-1">
+                                                Start Generating
+                                            </span>
                                         </>
                                     )}
                                 </button>
