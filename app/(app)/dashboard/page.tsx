@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getUsageStats } from "@/services/usage.service";
 import { listGenerations } from "@/services/generation.service";
+import { getUserProfile } from "@/services/user.service";
 import { formatRelativeTime } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import { Sparkles, History, Zap } from "lucide-react";
@@ -23,22 +24,18 @@ export default async function DashboardPage() {
     } = await supabase.auth.getUser();
     if (!user) redirect("/auth");
 
-    // Safely fetch profile – always return an object with data/error
+    // Use the service — never query user_profiles directly from a page
     const fetchProfile = async () => {
-        const { data, error } = await supabase
-            .from("user_profiles")
-            .select("full_name, email")
-            .eq("id", user.id)
-            .maybeSingle();
-
-        if (error) {
+        try {
+            const data = await getUserProfile(user.id);
+            return { data, error: null };
+        } catch (err) {
             console.error("[DashboardPage] Failed to fetch profile:", {
                 userId: user.id,
-                error: error.message || String(error),
+                err,
             });
-            return { data: null, error };
+            return { data: null, error: err };
         }
-        return { data, error: null };
     };
 
     const [profileResult, stats, historyResult] = await Promise.all([
@@ -76,7 +73,7 @@ export default async function DashboardPage() {
 
     // Determine display name with fallbacks
     const name =
-        profileResult.data?.full_name ??
+        profileResult.data?.displayName ??
         profileResult.data?.email ??
         user.email ??
         "there";
@@ -84,7 +81,7 @@ export default async function DashboardPage() {
 
     const recentGens = historyResult.success ? historyResult.generations : [];
     const usagePercent = Math.min(100, stats.percentUsed);
-    const isNearLimit = usagePercent >= 80 && stats.limit !== Infinity;
+    const isNearLimit = usagePercent >= 60 && stats.limit !== Infinity;
     const isAtLimit = !stats.allowed;
 
     return (
@@ -103,40 +100,30 @@ export default async function DashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <StatCard
                     label="Generations used"
-                    value={
-                        stats.limit === Infinity
-                            ? `${stats.used}`
-                            : `${stats.used} / ${stats.limit}`
-                    }
-                    sub={
-                        stats.limit === Infinity
-                            ? "Unlimited plan"
-                            : `${stats.remaining} remaining`
-                    }
+                    value={`${stats.used} / ${stats.limit}`}
+                    sub={`${stats.remaining} remaining`}
                     accent={isAtLimit ? "red" : isNearLimit ? "amber" : "green"}
                 >
-                    {stats.limit !== Infinity && (
-                        <div className="mt-3">
-                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                                <div
-                                    role="progressbar"
-                                    aria-valuenow={stats.used}
-                                    aria-valuemin={0}
-                                    aria-valuemax={stats.limit as number}
-                                    aria-label="Generation usage"
-                                    className={cn(
-                                        "h-full rounded-full transition-all",
-                                        isAtLimit
-                                            ? "bg-red-500"
-                                            : isNearLimit
-                                              ? "bg-amber-500"
-                                              : "bg-emerald-500",
-                                    )}
-                                    style={{ width: `${usagePercent}%` }}
-                                />
-                            </div>
+                    <div className="mt-3">
+                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div
+                                role="progressbar"
+                                aria-valuenow={stats.used}
+                                aria-valuemin={0}
+                                aria-valuemax={stats.limit as number}
+                                aria-label="Generation usage"
+                                className={cn(
+                                    "h-full rounded-full transition-all",
+                                    isAtLimit
+                                        ? "bg-red-500"
+                                        : isNearLimit
+                                          ? "bg-amber-500"
+                                          : "bg-emerald-500",
+                                )}
+                                style={{ width: `${usagePercent}%` }}
+                            />
                         </div>
-                    )}
+                    </div>
                 </StatCard>
 
                 <StatCard

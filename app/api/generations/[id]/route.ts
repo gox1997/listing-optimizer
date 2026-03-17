@@ -3,10 +3,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getGeneration, deleteGeneration } from "@/services/generation.service";
+import type { ApiResponse } from "@/types";
 
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                             */
-/* ------------------------------------------------------------------ */
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
 
 const UUID_REGEX =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -17,26 +18,30 @@ function isValidUUID(value: string): boolean {
 
 function errorToStatus(code: string): number {
     if (code === "not_found") return 404;
-    if (code === "internal_error") return 500;
     return 500;
 }
 
 type RouteParams = { params: Promise<{ id: string }> };
 
-/* ------------------------------------------------------------------ */
-/*  GET /api/generations/:id                                            */
-/* ------------------------------------------------------------------ */
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/generations/:id
+// ─────────────────────────────────────────────────────────────────────────────
 
 export async function GET(_req: NextRequest, { params }: RouteParams) {
     const supabase = await createServerSupabaseClient();
     const {
         data: { user },
-        error: authError,
     } = await supabase.auth.getUser();
 
-    if (authError || !user) {
-        return NextResponse.json(
-            { success: false, error: "Unauthorized." },
+    if (!user) {
+        return NextResponse.json<ApiResponse>(
+            {
+                success: false,
+                error: {
+                    code: "UNAUTHORIZED",
+                    message: "You must be logged in.",
+                },
+            },
             { status: 401 },
         );
     }
@@ -44,8 +49,14 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
     const { id } = await params;
 
     if (!isValidUUID(id)) {
-        return NextResponse.json(
-            { success: false, error: "Invalid ID format." },
+        return NextResponse.json<ApiResponse>(
+            {
+                success: false,
+                error: {
+                    code: "INVALID_REQUEST",
+                    message: "Invalid ID format.",
+                },
+            },
             { status: 400 },
         );
     }
@@ -58,32 +69,40 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
             code: result.code,
             error: result.error,
         });
-        return NextResponse.json(
-            { success: false, error: result.error },
+        return NextResponse.json<ApiResponse>(
+            {
+                success: false,
+                error: { code: "NOT_FOUND", message: result.error },
+            },
             { status: errorToStatus(result.code) },
         );
     }
 
-    return NextResponse.json({
+    return NextResponse.json<ApiResponse<typeof result>>({
         success: true,
-        data: { generation: result.generation },
+        data: result,
     });
 }
 
-/* ------------------------------------------------------------------ */
-/*  DELETE /api/generations/:id                                         */
-/* ------------------------------------------------------------------ */
+// ─────────────────────────────────────────────────────────────────────────────
+// DELETE /api/generations/:id
+// ─────────────────────────────────────────────────────────────────────────────
 
 export async function DELETE(_req: NextRequest, { params }: RouteParams) {
     const supabase = await createServerSupabaseClient();
     const {
         data: { user },
-        error: authError,
     } = await supabase.auth.getUser();
 
-    if (authError || !user) {
-        return NextResponse.json(
-            { success: false, error: "Unauthorized." },
+    if (!user) {
+        return NextResponse.json<ApiResponse>(
+            {
+                success: false,
+                error: {
+                    code: "UNAUTHORIZED",
+                    message: "You must be logged in.",
+                },
+            },
             { status: 401 },
         );
     }
@@ -91,8 +110,14 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
     const { id } = await params;
 
     if (!isValidUUID(id)) {
-        return NextResponse.json(
-            { success: false, error: "Invalid ID format." },
+        return NextResponse.json<ApiResponse>(
+            {
+                success: false,
+                error: {
+                    code: "INVALID_REQUEST",
+                    message: "Invalid ID format.",
+                },
+            },
             { status: 400 },
         );
     }
@@ -105,39 +130,35 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
             code: result.code,
             error: result.error,
         });
-        return NextResponse.json(
-            { success: false, error: result.error },
+        return NextResponse.json<ApiResponse>(
+            {
+                success: false,
+                error: { code: "INTERNAL_ERROR", message: result.error },
+            },
             { status: errorToStatus(result.code) },
         );
     }
 
+    // 204 No Content — correct HTTP semantics for a successful DELETE
     return new NextResponse(null, { status: 204 });
 }
 
-/* ------------------------------------------------------------------ */
-/*  HEAD /api/generations/:id                                           */
-/* ------------------------------------------------------------------ */
+// ─────────────────────────────────────────────────────────────────────────────
+// HEAD /api/generations/:id
+// Lightweight existence check — no body returned, used for prefetching.
+// ─────────────────────────────────────────────────────────────────────────────
 
 export async function HEAD(_req: NextRequest, { params }: RouteParams) {
     const supabase = await createServerSupabaseClient();
     const {
         data: { user },
-        error: authError,
     } = await supabase.auth.getUser();
 
-    if (authError || !user) {
-        return new NextResponse(null, { status: 401 });
-    }
+    if (!user) return new NextResponse(null, { status: 401 });
 
     const { id } = await params;
-
-    if (!isValidUUID(id)) {
-        return new NextResponse(null, { status: 400 });
-    }
+    if (!isValidUUID(id)) return new NextResponse(null, { status: 400 });
 
     const result = await getGeneration(user.id, id);
-
-    return new NextResponse(null, {
-        status: result.success ? 200 : 404,
-    });
+    return new NextResponse(null, { status: result.success ? 200 : 404 });
 }

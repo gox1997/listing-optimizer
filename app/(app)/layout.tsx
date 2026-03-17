@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getUsageStats } from "@/services/usage.service";
+import { getUserProfile } from "@/services/user.service";
 import { Sidebar } from "@/components/layout/Sidebar";
 
 export default async function AppLayout({
@@ -16,12 +17,8 @@ export default async function AppLayout({
     } = await supabase.auth.getUser();
     if (!user) redirect("/auth");
 
-    const [profileResult, stats] = await Promise.all([
-        supabase
-            .from("user_profiles")
-            .select("full_name, email")
-            .eq("id", user.id)
-            .single(),
+    const [profile, stats] = await Promise.all([
+        getUserProfile(user.id).catch(() => null),
         getUsageStats(user.id).catch(() => ({
             allowed: true,
             used: 0,
@@ -33,14 +30,14 @@ export default async function AppLayout({
         })),
     ]);
 
-    const fullName = profileResult.data?.full_name ?? "";
-    const userEmail = profileResult.data?.email ?? user.email ?? "";
+    const displayName = profile?.displayName ?? "";
+    const userEmail = profile?.email ?? user.email ?? "";
 
     return (
         <div className="flex min-h-screen bg-linear-to-b from-muted via-amber-500/10 to-muted">
             <Sidebar
                 userEmail={userEmail}
-                displayName={fullName}
+                displayName={displayName}
                 plan={stats.plan}
                 used={stats.used}
                 limit={stats.limit}

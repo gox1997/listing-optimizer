@@ -1,103 +1,134 @@
-import { NextRequest, NextResponse } from "next/server";
+// app/api/generate/route.ts
+//
+// POST /api/generate
+//
+// Responsibilities of this route — nothing more:
+//   1. Authenticate the request
+//   2. Validate and parse the request body
+//   3. Delegate to createGeneration() in generation.service.ts
+//   4. Map the result to the correct HTTP response
+//
+// Quota check, AI call, DB persistence, usage increment
+// are all owned by generation.service.ts — not this file.
+
+import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createGeneration } from "@/services/generation.service";
-import { z } from "zod";
-import type { GenerationInput } from "@/types";
+import type { ApiResponse } from "@/types";
+import type { GenerationResult } from "@/services/generation.service";
 
-/* ------------------------------------------------------------------ */
-/*  Request validation schema                                           */
-/* ------------------------------------------------------------------ */
+// ─────────────────────────────────────────────────────────────────────────────
+// Request schema
+// Validated before any service calls — bad input never reaches the AI.
+// ─────────────────────────────────────────────────────────────────────────────
 
 const GenerateRequestSchema = z.object({
-    productName: z
-        .string()
-        .min(1, "Product name is required")
-        .max(200, "Product name is too long"),
-    productCategory: z
-        .string()
-        .min(1, "Category is required")
-        .max(100, "Category is too long"),
+    productName: z.string().min(1, "Product name is required").max(200),
+    productCategory: z.string().min(1, "Category is required").max(100),
+    description: z.string().max(2000).optional(),
+    features: z.array(z.string().max(200)).max(10).optional(),
     platform: z.enum(["amazon", "shopify", "etsy", "general"]),
     tone: z.enum(["professional", "casual", "luxury", "playful", "technical"]),
-    description: z.string().max(2000, "Description is too long").optional(),
-    features: z.array(z.string().max(300)).max(10).optional(),
+    keywords: z.array(z.string().max(100)).max(15).optional(),
     primaryKeyword: z.string().max(100).optional(),
-    keywords: z.array(z.string().max(100)).max(20).optional(),
 });
 
-/* ------------------------------------------------------------------ */
-/*  POST /api/generate                                                  */
-/* ------------------------------------------------------------------ */
+// ─────────────────────────────────────────────────────────────────────────────
+// Error code → HTTP status mapping
+// ─────────────────────────────────────────────────────────────────────────────
 
-export async function POST(req: NextRequest) {
-    // Step 1: Verify auth
+const ERROR_STATUS: Record<string, number> = {
+    quota_exceeded: 402,
+    ai_error: 503,
+    save_error: 500,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST handler
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function POST(request: Request) {
+    // ── 1. Authenticate ──────────────────────────────────────────────────────
     const supabase = await createServerSupabaseClient();
     const {
         data: { user },
-        error: authError,
     } = await supabase.auth.getUser();
 
-    if (authError || !user) {
-        return NextResponse.json(
-            { success: false, error: "Unauthorized." },
+    if (!user) {
+        return NextResponse.json<ApiResponse>(
+            {
+                success: false,
+                error: {
+                    code: "UNAUTHORIZED",
+                    message: "You must be logged in to generate a listing.",
+                },
+            },
             { status: 401 },
         );
     }
 
-    // Step 2: Parse and validate request body
+    // ── 2. Parse and validate request body ───────────────────────────────────
     let body: unknown;
     try {
-        body = await req.json();
+        body = await request.json();
     } catch {
-        return NextResponse.json(
-            { success: false, error: "Invalid JSON in request body." },
+        return NextResponse.json<ApiResponse>(
+            {
+                success: false,
+                error: {
+                    code: "INVALID_REQUEST",
+                    message: "Request body must be valid JSON.",
+                },
+            },
             { status: 400 },
         );
     }
 
     const parsed = GenerateRequestSchema.safeParse(body);
-
     if (!parsed.success) {
-        const firstError = parsed.error.errors[0];
-        return NextResponse.json(
+        const details = parsed.error.errors.map(
+            (e) => `${e.path.join(".")}: ${e.message}`,
+        );
+        return NextResponse.json<ApiResponse>(
             {
                 success: false,
-                error: `${firstError.path.join(".")}: ${firstError.message}`,
-                fields: parsed.error.flatten().fieldErrors,
+                error: {
+                    code: "VALIDATION_ERROR",
+                    message: "Invalid request data.",
+                    details,
+                },
             },
             { status: 422 },
         );
     }
 
-    const input: GenerationInput = parsed.data;
+    // ── 3. Delegate to service ───────────────────────────────────────────────
+    const result: GenerationResult = await createGeneration(
+        user.id,
+        parsed.data,
+    );
 
-    // Step 3: Orchestrate — quota check + AI + save + increment
-    const result = await createGeneration(user.id, input);
-
+    // ── 4. Map result to HTTP response ───────────────────────────────────────
     if (!result.success) {
-        const status =
-            result.code === "quota_exceeded"
-                ? 402
-                : result.code === "ai_error"
-                  ? 502
-                  : 500;
-
-        return NextResponse.json(
+        const status = ERROR_STATUS[result.code] ?? 500;
+        return NextResponse.json<ApiResponse>(
             {
                 success: false,
-                error: result.error,
-                code: result.code,
+                error: {
+                    code:
+                        result.code === "quota_exceeded"
+                            ? "QUOTA_EXCEEDED"
+                            : "INTERNAL_ERROR",
+                    message: result.error,
+                },
             },
             { status },
         );
     }
 
-    // Step 4: Return generation
-    return NextResponse.json(
-        {
-            success: true,
-            generation: result.generation,
-        },
+    return NextResponse.json<ApiResponse<GenerationResult>>(
+        { success: true, data: result },
         { status: 201 },
     );
 }

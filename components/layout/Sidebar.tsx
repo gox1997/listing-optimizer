@@ -18,9 +18,7 @@ import {
     ChevronRight,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { RiAiGenerate2 } from "react-icons/ri";
 import Image from "next/image";
-import { Icon } from "next/dist/lib/metadata/types/metadata-types";
 
 /* ------------------------------------------------------------------ */
 /*  Nav config                                                          */
@@ -61,7 +59,7 @@ type Props = {
     displayName: string;
     plan: string;
     used: number;
-    limit: number | typeof Infinity;
+    limit: number;
 };
 
 /* ------------------------------------------------------------------ */
@@ -92,12 +90,9 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
 
     const closeMobile = useCallback(() => setMobileOpen(false), []);
 
-    const usagePercent =
-        limit === Infinity
-            ? 0
-            : Math.min(100, Math.round((used / (limit as number)) * 100));
-    const isNearLimit = usagePercent >= 80 && limit !== Infinity;
-    const isAtLimit = limit !== Infinity && used >= (limit as number);
+    const usagePercent = Math.min(100, Math.round((used / limit) * 100));
+    const isNearLimit = usagePercent >= 60; // matches dashboard threshold — shows at 3/5
+    const isAtLimit = used >= limit;
     const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
     const initials = displayName
         ? displayName.slice(0, 2).toUpperCase()
@@ -120,7 +115,7 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
                         className="rounded-lg group-hover:scale-105 transition-transform mb-1"
                     />
                     <Image
-                        src="/logo-listingBull.svg"
+                        src="/logo-ListingBull.svg"
                         alt="ListingBull"
                         width={150}
                         height={45}
@@ -183,81 +178,79 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
             </nav>
 
             {/* Usage widget */}
-            {limit !== Infinity && (
-                <div className="mx-3 mb-3">
-                    <div
-                        className={cn(
-                            "rounded-xl p-3.5 border transition-colors",
-                            isAtLimit
-                                ? "bg-red-50   border-red-200"
-                                : isNearLimit
-                                  ? "bg-amber-50 border-amber-200"
-                                  : "bg-muted border-border",
-                        )}
-                    >
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-1.5">
-                                <Zap
-                                    className={cn(
-                                        "w-3.5 h-3.5",
-                                        isAtLimit
-                                            ? "text-red-500"
-                                            : isNearLimit
-                                              ? "text-amber-500"
-                                              : "text-muted-foreground",
-                                    )}
-                                    aria-hidden="true"
-                                />
-                                <span className="text-xs font-semibold text-foreground">
-                                    Usage
-                                </span>
-                            </div>
-                            <span
+            <div className="mx-3 mb-3">
+                <div
+                    className={cn(
+                        "rounded-xl p-3.5 border transition-colors",
+                        isAtLimit
+                            ? "bg-red-50   border-red-200"
+                            : isNearLimit
+                              ? "bg-amber-50 border-amber-200"
+                              : "bg-muted border-border",
+                    )}
+                >
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1.5">
+                            <Zap
                                 className={cn(
-                                    "text-xs font-bold",
+                                    "w-3.5 h-3.5",
                                     isAtLimit
-                                        ? "text-red-600"
+                                        ? "text-red-500"
                                         : isNearLimit
-                                          ? "text-amber-600"
+                                          ? "text-amber-500"
                                           : "text-muted-foreground",
                                 )}
-                            >
-                                {used}/{limit as number}
+                                aria-hidden="true"
+                            />
+                            <span className="text-xs font-semibold text-foreground">
+                                Usage
                             </span>
                         </div>
-
-                        <div className="h-1.5 bg-sidebar-elite rounded-full overflow-hidden border border-border">
-                            <div
-                                role="progressbar"
-                                aria-valuenow={used}
-                                aria-valuemin={0}
-                                aria-valuemax={limit as number}
-                                aria-label="Monthly generation usage"
-                                className={cn(
-                                    "h-full rounded-full transition-all duration-500",
-                                    isAtLimit
-                                        ? "bg-red-500"
-                                        : isNearLimit
-                                          ? "bg-amber-500"
-                                          : "bg-emerald-500",
-                                )}
-                                style={{ width: `${usagePercent}%` }}
-                            />
-                        </div>
-
-                        {isAtLimit && (
-                            <Link
-                                href="/upgrade"
-                                onClick={closeMobile}
-                                className="mt-2.5 flex items-center justify-center gap-1.5 w-full py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                                <Zap className="w-3 h-3" aria-hidden="true" />
-                                Upgrade plan
-                            </Link>
-                        )}
+                        <span
+                            className={cn(
+                                "text-xs font-bold",
+                                isAtLimit
+                                    ? "text-red-600"
+                                    : isNearLimit
+                                      ? "text-amber-600"
+                                      : "text-muted-foreground",
+                            )}
+                        >
+                            {used}/{limit}
+                        </span>
                     </div>
+
+                    <div className="h-1.5 bg-sidebar-elite rounded-full overflow-hidden border border-border">
+                        <div
+                            role="progressbar"
+                            aria-valuenow={used}
+                            aria-valuemin={0}
+                            aria-valuemax={limit}
+                            aria-label="Monthly generation usage"
+                            className={cn(
+                                "h-full rounded-full transition-all duration-500",
+                                isAtLimit
+                                    ? "bg-red-500"
+                                    : isNearLimit
+                                      ? "bg-amber-500"
+                                      : "bg-emerald-500",
+                            )}
+                            style={{ width: `${usagePercent}%` }}
+                        />
+                    </div>
+
+                    {isAtLimit && (
+                        <Link
+                            href="/upgrade"
+                            onClick={closeMobile}
+                            className="mt-2.5 flex items-center justify-center gap-1.5 w-full py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                            <Zap className="w-3 h-3" aria-hidden="true" />
+                            Upgrade plan
+                        </Link>
+                    )}
                 </div>
-            )}
+            </div>
 
             {/* Divider */}
             <div className="mx-4 h-px bg-muted" />
@@ -322,7 +315,7 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
                         className="rounded-lg group-hover:scale-105 transition-transform"
                     />
                     <Image
-                        src="/logo-listingBull.svg"
+                        src="/logo-ListingBull.svg"
                         alt="ListingBull"
                         width={150}
                         height={45}
