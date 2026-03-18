@@ -1,5 +1,4 @@
 // app/(app)/dashboard/page.tsx
-
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -17,14 +16,20 @@ export const metadata: Metadata = {
     title: "Dashboard — ListingAI",
 };
 
-export default async function DashboardPage() {
+type Props = {
+    searchParams: Promise<{ upgrade?: string }>;
+};
+
+export default async function DashboardPage({ searchParams }: Props) {
+    const { upgrade } = await searchParams;
+
     const supabase = await createServerSupabaseClient();
     const {
         data: { user },
     } = await supabase.auth.getUser();
     if (!user) redirect("/auth");
 
-    // Use the service — never query user_profiles directly from a page
+    // Fetch profile safely
     const fetchProfile = async () => {
         try {
             const data = await getUserProfile(user.id);
@@ -58,10 +63,7 @@ export default async function DashboardPage() {
         listGenerations(user.id, 1, 3).catch((err) => {
             console.error(
                 "[DashboardPage] Failed to fetch recent generations:",
-                {
-                    userId: user.id,
-                    err,
-                },
+                { userId: user.id, err },
             );
             return {
                 success: false as const,
@@ -71,7 +73,6 @@ export default async function DashboardPage() {
         }),
     ]);
 
-    // Determine display name with fallbacks
     const name =
         profileResult.data?.displayName ??
         profileResult.data?.email ??
@@ -86,6 +87,16 @@ export default async function DashboardPage() {
 
     return (
         <div className="max-w-3xl mx-auto space-y-8">
+            {/* Success banner */}
+            {upgrade === "success" && (
+                <div
+                    role="alert"
+                    className="p-4 bg-emerald-100  border border-emerald-200 rounded-xl text-sm sm:text-base text-emerald-800 text-center font-medium"
+                >
+                    🎉 Welcome to your new plan! Your account has been upgraded.
+                </div>
+            )}
+
             {/* Welcome */}
             <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
@@ -196,8 +207,10 @@ export default async function DashboardPage() {
                         <Sparkles className="w-5 h-5" aria-hidden="true" />
                     </div>
                     <div>
-                        <p className="font-bold text-lg">Generate listing</p>
-                        <p className="text-base font-mono opacity-70 mt-0.5">
+                        <p className="font-bold text-base sm:text-lg">
+                            Generate listing
+                        </p>
+                        <p className="text-sm sm:text-base font-mono opacity-70 mt-0.5">
                             {isAtLimit
                                 ? "Upgrade to continue"
                                 : "AI-optimized in seconds"}
@@ -216,10 +229,10 @@ export default async function DashboardPage() {
                         />
                     </div>
                     <div>
-                        <p className="font-bold text-foreground text-lg">
+                        <p className="font-bold text-foreground text-base sm:text-lg">
                             View history
                         </p>
-                        <p className="text-base font-mono text-muted-foreground mt-0.5">
+                        <p className="text-sm sm:text-base font-mono text-muted-foreground mt-0.5">
                             Browse past generations
                         </p>
                     </div>
@@ -301,23 +314,43 @@ function StatCard({
     }[accent];
 
     return (
-        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-1">
-                <div
-                    className={cn("w-2 h-2 rounded-full shrink-0", dotColor)}
-                    aria-hidden="true"
-                />
-                <p className="text-sm font-medium font-mono text-muted-foreground uppercase tracking-wider">
-                    {label}
+        <div
+            className={cn(
+                "group relative overflow-hidden rounded-2xl border bg-card p-5",
+                "transition-all duration-200 ease-out",
+                "hover:shadow-lg hover:-translate-y-0.5",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            )}
+        >
+            {/* Subtle gradient overlay on hover */}
+            <div className="absolute inset-0 bg-linear-to-br from-transparent via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+            {/* Top accent line */}
+            <div className={cn("absolute inset-x-0 top-0 h-0.5", dotColor)} />
+
+            <div className="relative z-10">
+                {/* Header with dot and label */}
+                <div className="flex items-center gap-2 mb-2">
+                    <div
+                        className={cn("w-2 h-2 rounded-full", dotColor)}
+                        aria-hidden="true"
+                    />
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        {label}
+                    </p>
+                </div>
+
+                {/* Value */}
+                <p className="text-3xl font-bold tracking-tight text-foreground">
+                    {value}
                 </p>
+
+                {/* Sub text */}
+                <p className="text-sm text-muted-foreground/80 mt-1">{sub}</p>
+
+                {/* Children (progress bar, etc.) */}
+                {children && <div className="mt-4">{children}</div>}
             </div>
-            <p className="text-lg font-bold font-mono text-foreground">
-                {value}
-            </p>
-            <p className="text-sm font-mono text-muted-foreground/70 mt-0.5">
-                {sub}
-            </p>
-            {children}
         </div>
     );
 }

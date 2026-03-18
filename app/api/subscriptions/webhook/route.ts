@@ -148,8 +148,12 @@ export async function POST(request: Request) {
                 console.log(`[webhook] Unhandled event type: ${event.type}`);
         }
     } catch (err) {
-        const message = err instanceof Error ? err.message : "Unknown error";
-        console.error(`[webhook] Handler error for ${event.type}:`, message);
+        // Log full error details
+        console.error(`[webhook] Handler error for ${event.type}:`, {
+            message: err instanceof Error ? err.message : String(err),
+            stack: err instanceof Error ? err.stack : undefined,
+            error: err,
+        });
         return NextResponse.json({ error: "Handler failed" }, { status: 500 });
     }
 
@@ -168,21 +172,36 @@ async function handleSubscriptionUpsert(
     const plan = getPlanFromPriceId(priceId);
     const status = toSubscriptionStatus(sub.status);
 
+    let currentPeriodStart = sub.current_period_start;
+    let currentPeriodEnd = sub.current_period_end;
+    let canceledAt = sub.canceled_at;
+
+    if (
+        typeof currentPeriodStart !== "number" ||
+        typeof currentPeriodEnd !== "number"
+    ) {
+        console.warn(
+            `[webhook] Timestamps missing for subscription ${sub.id}, fetching from Stripe...`,
+        );
+        const fullSub = await stripe.subscriptions.retrieve(sub.id);
+        currentPeriodStart = fullSub.current_period_start;
+        currentPeriodEnd = fullSub.current_period_end;
+        canceledAt = fullSub.canceled_at;
+    }
+
     const sharedParams = {
         plan,
         status,
         stripeCustomerId: customerId,
         stripeSubscriptionId: sub.id,
         stripePriceId: priceId,
-        currentPeriodStart: new Date(sub.current_period_start * 1000),
-        currentPeriodEnd: new Date(sub.current_period_end * 1000),
+        currentPeriodStart: new Date(currentPeriodStart * 1000),
+        currentPeriodEnd: new Date(currentPeriodEnd * 1000),
         cancelAtPeriodEnd: sub.cancel_at_period_end,
-        canceledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000) : null,
+        canceledAt: canceledAt ? new Date(canceledAt * 1000) : null,
     };
 
     let userId = await getUserIdByStripeCustomerId(customerId);
-
-    // New customer — fall back to metadata set during checkout
     if (!userId) {
         userId = sub.metadata?.supabaseUserId ?? null;
         if (!userId) {
@@ -193,10 +212,10 @@ async function handleSubscriptionUpsert(
         }
     }
 
-    await upsertFromStripe({ userId, ...sharedParams });
     console.log(
-        `[webhook] Upserted subscription for user ${userId}, plan: ${plan}`,
+        `[webhook] Upserting subscription for user ${userId}, plan: ${plan}`,
     );
+    await upsertFromStripe({ userId, ...sharedParams });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

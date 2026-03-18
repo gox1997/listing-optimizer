@@ -34,7 +34,7 @@ export default async function AppLayout({
     const userEmail = profile?.email ?? user.email ?? "";
 
     return (
-        <div className="flex min-h-screen bg-linear-to-b from-muted via-amber-500/10 to-muted">
+        <div className="flex min-h-screen bg-linear-to-br from-slate-50 via-amber-50 to-slate-50">
             <Sidebar
                 userEmail={userEmail}
                 displayName={displayName}

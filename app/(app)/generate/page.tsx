@@ -37,7 +37,7 @@ export default async function GeneratePage() {
                 <div className="flex items-start justify-between gap-4">
                     <div>
                         <Sparkles className="w-5 h-5" aria-hidden="true" />
-                        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
                             Generate Listing
                         </h1>
                         <p className="text-muted-foreground text-sm sm:text-base font-mono mt-1">
