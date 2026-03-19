@@ -4,7 +4,6 @@
 //
 // Creates a Stripe Customer Portal session.
 // Used for: cancel subscription, update payment method, view invoices.
-// The client redirects the user to the portal URL — Stripe handles everything.
 
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -13,7 +12,7 @@ import { getSubscription } from "@/services/subscription.service";
 import type { ApiResponse } from "@/types";
 
 export async function POST() {
-    // 1. Authenticate
+    // ── 1. Authenticate ───────────────────────────────────────────────────────
     const supabase = await createServerSupabaseClient();
     const {
         data: { user },
@@ -32,7 +31,7 @@ export async function POST() {
         );
     }
 
-    // 2. Get Stripe customer ID — only paid users have one
+    // ── 2. Verify a Stripe customer exists ────────────────────────────────────
     const subscription = await getSubscription(user.id);
 
     if (!subscription?.stripeCustomerId) {
@@ -48,13 +47,28 @@ export async function POST() {
         );
     }
 
-    // 3. Create portal session
+    // ── 3. Create portal session ──────────────────────────────────────────────
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-    const session = await stripe.billingPortal.sessions.create({
-        customer: subscription.stripeCustomerId,
-        return_url: `${appUrl}/dashboard`,
-    });
+    let session;
+    try {
+        session = await stripe.billingPortal.sessions.create({
+            customer: subscription.stripeCustomerId,
+            return_url: `${appUrl}/dashboard`,
+        });
+    } catch (err) {
+        console.error("[portal] Failed to create Stripe portal session:", err);
+        return NextResponse.json<ApiResponse>(
+            {
+                success: false,
+                error: {
+                    code: "INTERNAL_ERROR",
+                    message: "Failed to open billing portal.",
+                },
+            },
+            { status: 502 },
+        );
+    }
 
     return NextResponse.json<ApiResponse<{ url: string }>>({
         success: true,

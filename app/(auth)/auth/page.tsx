@@ -7,7 +7,7 @@ import { Sparkles, Mail } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 // APP_NAME not yet exported from config — defined locally until added
-const APP_NAME = "ListingBull";
+const APP_NAME = "ListingGem";
 
 export default function AuthPage() {
     const [email, setEmail] = useState("");
@@ -61,7 +61,7 @@ export default function AuthPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-linear-to-br from-slate-50 via-amber-50 to-slate-50 flex items-center justify-center p-4">
             <div className="w-full max-w-sm">
                 {/* Logo */}
                 <div className="text-center mb-8">
