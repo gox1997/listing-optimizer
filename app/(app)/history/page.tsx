@@ -1,25 +1,13 @@
-// app/(app)/history/page.tsx
-
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { listGenerations } from "@/services/generation.service";
 import { formatRelativeTime } from "@/lib/utils/format";
-import { cn } from "@/lib/utils/cn";
 import { History, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
 import type { Metadata } from "next";
 
-/* ------------------------------------------------------------------ */
-/*  Metadata                                                            */
-/* ------------------------------------------------------------------ */
-
-export const metadata: Metadata = {
-    title: "Generation History — ListingAI",
-};
-
-/* ------------------------------------------------------------------ */
-/*  Constants                                                           */
-/* ------------------------------------------------------------------ */
+export const metadata: Metadata = { title: "History" };
 
 const LIMIT = 20;
 
@@ -30,50 +18,62 @@ const PLATFORM_LABELS: Record<string, string> = {
     general: "General",
 };
 
-const TONE_COLORS: Record<string, string> = {
-    professional: "bg-blue-50   text-blue-700",
-    casual: "bg-green-50  text-green-700",
-    luxury: "bg-purple-50 text-purple-700",
-    playful: "bg-pink-50   text-pink-700",
-    technical: "bg-slate-100 text-slate-700",
+// Dark-compatible tone styles — inline to avoid Tailwind purging
+const TONE_STYLES: Record<string, React.CSSProperties> = {
+    professional: {
+        background: "rgba(6,182,212,0.1)",
+        color: "#67e8f9",
+        border: "1px solid rgba(6,182,212,0.2)",
+    },
+    casual: {
+        background: "rgba(16,185,129,0.1)",
+        color: "#6ee7b7",
+        border: "1px solid rgba(16,185,129,0.2)",
+    },
+    luxury: {
+        background: "rgba(139,92,246,0.1)",
+        color: "#c4b5fd",
+        border: "1px solid rgba(139,92,246,0.2)",
+    },
+    playful: {
+        background: "rgba(236,72,153,0.1)",
+        color: "#f9a8d4",
+        border: "1px solid rgba(236,72,153,0.2)",
+    },
+    technical: {
+        background: "rgba(148,163,184,0.1)",
+        color: "#94a3b8",
+        border: "1px solid rgba(148,163,184,0.2)",
+    },
 };
 
-/* ------------------------------------------------------------------ */
-/*  Props                                                               */
-/* ------------------------------------------------------------------ */
-
-type Props = {
-    searchParams: Promise<{ page?: string }>;
-};
-
-/* ------------------------------------------------------------------ */
-/*  Page                                                                */
-/* ------------------------------------------------------------------ */
+type Props = { searchParams: Promise<{ page?: string }> };
 
 export default async function HistoryPage({ searchParams }: Props) {
-    // Auth — redirect if no session
     const supabase = await createServerSupabaseClient();
     const {
         data: { user },
     } = await supabase.auth.getUser();
     if (!user) redirect("/auth");
 
-    // Sanitize page param
     const { page: pageParam } = await searchParams;
     const parsed = parseInt(pageParam ?? "1", 10);
     const page = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 
-    // Fetch
     const result = await listGenerations(user.id, page, LIMIT);
 
-    // Service error — show inline error, not a crash
     if (!result.success) {
         return (
             <div className="max-w-2xl mx-auto space-y-6">
                 <PageHeader total={0} />
                 <div
                     role="alert"
-                    className="p-6 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700 text-center"
+                    className="p-6 rounded-2xl text-sm text-center"
+                    style={{
+                        background: "rgba(239,68,68,0.08)",
+                        border: "1px solid rgba(239,68,68,0.2)",
+                        color: "#fca5a5",
+                    }}
                 >
                     Failed to load generation history. Please refresh the page.
                 </div>
@@ -90,22 +90,38 @@ export default async function HistoryPage({ searchParams }: Props) {
 
             {/* Empty state */}
             {generations.length === 0 && (
-                <div className="text-center py-20 bg-card border border-border rounded-2xl">
-                    <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <div
+                    className="text-center py-20 rounded-2xl"
+                    style={{
+                        background: "rgba(30,41,59,0.4)",
+                        border: "1px solid rgba(255,255,255,0.07)",
+                    }}
+                >
+                    <div
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                        style={{
+                            background: "rgba(139,92,246,0.12)",
+                            border: "1px solid rgba(139,92,246,0.2)",
+                        }}
+                    >
                         <Sparkles
-                            className="w-6 h-6 text-muted-foreground"
+                            className="w-6 h-6 text-violet-400"
                             aria-hidden="true"
                         />
                     </div>
-                    <p className="font-semibold text-base sm:text-lg text-foreground">
+                    <p className="font-semibold text-foreground">
                         No listings yet
                     </p>
-                    <p className="text-muted-foreground text-sm sm:text-base mt-1 mb-6 pl-2 pr-2 pb-4">
+                    <p className="text-muted-foreground text-sm mt-1 mb-6">
                         Generate your first listing to see it here.
                     </p>
                     <Link
                         href="/generate"
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-base sm:text-lg font-semibold hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                        style={{
+                            background:
+                                "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                        }}
                     >
                         <Sparkles className="w-4 h-4" aria-hidden="true" />
                         Generate a listing
@@ -120,7 +136,22 @@ export default async function HistoryPage({ searchParams }: Props) {
                         <li key={gen.id}>
                             <Link
                                 href={`/generate/${gen.id}`}
-                                className="block bg-card border border-border rounded-2xl p-5 shadow-sm hover:border-primary/50 hover:shadow-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                className="block rounded-2xl p-5 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                                style={{
+                                    background: "rgba(30,41,59,0.5)",
+                                    border: "1px solid rgba(255,255,255,0.07)",
+                                }}
+                                onMouseEnter={(e) => {
+                                    (
+                                        e.currentTarget as HTMLElement
+                                    ).style.borderColor = "rgba(6,182,212,0.3)";
+                                }}
+                                onMouseLeave={(e) => {
+                                    (
+                                        e.currentTarget as HTMLElement
+                                    ).style.borderColor =
+                                        "rgba(255,255,255,0.07)";
+                                }}
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1 min-w-0">
@@ -133,28 +164,49 @@ export default async function HistoryPage({ searchParams }: Props) {
                                     </div>
                                     <time
                                         dateTime={gen.created_at}
-                                        className="shrink-0 text-xs text-muted-foreground/70 mt-0.5"
+                                        className="shrink-0 text-xs text-muted-foreground/60 mt-0.5"
                                     >
                                         {formatRelativeTime(gen.created_at)}
                                     </time>
                                 </div>
 
                                 <div className="flex items-center gap-2 mt-3 flex-wrap">
-                                    <span className="px-2 py-0.5 bg-muted text-muted-foreground rounded-md text-xs font-medium">
+                                    {/* Platform badge */}
+                                    <span
+                                        className="px-2 py-0.5 rounded-md text-xs font-medium"
+                                        style={{
+                                            background:
+                                                "rgba(255,255,255,0.06)",
+                                            color: "#94a3b8",
+                                            border: "1px solid rgba(255,255,255,0.08)",
+                                        }}
+                                    >
                                         {PLATFORM_LABELS[gen.platform] ??
                                             gen.platform}
                                     </span>
+
+                                    {/* Tone badge */}
                                     <span
-                                        className={cn(
-                                            "px-2 py-0.5 rounded-md text-xs font-medium capitalize",
-                                            TONE_COLORS[gen.tone] ??
-                                                "bg-muted text-muted-foreground",
-                                        )}
+                                        className="px-2 py-0.5 rounded-md text-xs font-medium capitalize"
+                                        style={
+                                            TONE_STYLES[gen.tone] ??
+                                            TONE_STYLES.professional
+                                        }
                                     >
                                         {gen.tone}
                                     </span>
+
+                                    {/* Keyword badge */}
                                     {gen.primary_keyword && (
-                                        <span className="px-2 py-0.5 bg-muted/50 text-muted-foreground rounded-md text-xs border border-border truncate max-w-40">
+                                        <span
+                                            className="px-2 py-0.5 rounded-md text-xs truncate max-w-40"
+                                            style={{
+                                                background:
+                                                    "rgba(255,255,255,0.04)",
+                                                color: "#64748b",
+                                                border: "1px solid rgba(255,255,255,0.06)",
+                                            }}
+                                        >
                                             {gen.primary_keyword}
                                         </span>
                                     )}
@@ -177,8 +229,7 @@ export default async function HistoryPage({ searchParams }: Props) {
                     >
                         Previous
                     </PaginationLink>
-
-                    <span className="text-base text-muted-foreground">
+                    <span className="text-sm text-muted-foreground">
                         Page{" "}
                         <span className="font-semibold text-foreground">
                             {page}
@@ -188,7 +239,6 @@ export default async function HistoryPage({ searchParams }: Props) {
                             {totalPages}
                         </span>
                     </span>
-
                     <PaginationLink
                         href={`/history?page=${page + 1}`}
                         disabled={page >= totalPages}
@@ -201,19 +251,18 @@ export default async function HistoryPage({ searchParams }: Props) {
     );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Sub-components                                                      */
-/* ------------------------------------------------------------------ */
-
 function PageHeader({ total }: { total: number }) {
     return (
         <div className="flex items-center justify-between">
             <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
-                    <History className="w-5 h-5" aria-hidden="true" />
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2.5">
+                    <History
+                        className="w-5 h-5 text-muted-foreground"
+                        aria-hidden="true"
+                    />
                     History
                 </h1>
-                <p className="text-muted-foreground text-base mt-1">
+                <p className="text-muted-foreground text-sm mt-1">
                     {total > 0
                         ? `${total} listing${total === 1 ? "" : "s"} generated`
                         : "No generations yet"}
@@ -221,7 +270,10 @@ function PageHeader({ total }: { total: number }) {
             </div>
             <Link
                 href="/generate"
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-base sm:text-lg font-semibold hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                style={{
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                }}
             >
                 <Sparkles className="w-4 h-4" aria-hidden="true" />
                 New
@@ -245,11 +297,11 @@ function PaginationLink({
             aria-disabled={disabled}
             tabIndex={disabled ? -1 : undefined}
             className={cn(
-                "px-4 py-2 rounded-xl border border-border text-base font-medium transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "px-4 py-2 rounded-xl border border-border text-sm font-medium transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50",
                 disabled
-                    ? "opacity-40 pointer-events-none"
-                    : "hover:bg-muted text-muted-foreground",
+                    ? "opacity-30 pointer-events-none text-muted-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent",
             )}
         >
             {children}

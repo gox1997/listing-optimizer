@@ -140,7 +140,7 @@ export default function OnboardingPage() {
                                         className={cn(
                                             "p-4 rounded-xl border-2 text-left transition-all duration-150",
                                             data.platform === p.value
-                                                ? "border-cyan-500/60 bg-cyan-500/10 text-foreground"
+                                                ? "border-indigo-500/60 bg-indigo-500/10 text-foreground"
                                                 : "border-border bg-muted/30 hover:border-border/80 hover:bg-muted/60 text-muted-foreground hover:text-foreground",
                                         )}
                                     >
@@ -240,7 +240,7 @@ export default function OnboardingPage() {
                                         className={cn(
                                             "w-full p-4 rounded-xl border-2 text-left transition-all duration-150",
                                             data.tone === t.value
-                                                ? "border-cyan-500/60 bg-cyan-500/10"
+                                                ? "border-indigo-500/60 bg-indigo-500/10"
                                                 : "border-border bg-muted/30 hover:border-border/80 hover:bg-muted/60",
                                         )}
                                     >
@@ -249,7 +249,7 @@ export default function OnboardingPage() {
                                                 {t.label}
                                             </p>
                                             {data.tone === t.value && (
-                                                <Check className="w-4 h-4 text-cyan-400" />
+                                                <Check className="w-4 h-4 text-indigo-400" />
                                             )}
                                         </div>
                                         <p className="text-xs text-muted-foreground mt-1">

@@ -1,4 +1,3 @@
-// app/(app)/upgrade/UpgradeClient.tsx
 "use client";
 
 import { useState, useCallback } from "react";
@@ -8,10 +7,6 @@ import { cn } from "@/lib/utils/cn";
 import { Check, Zap, Loader2 } from "lucide-react";
 import type { Plan } from "@/types";
 import type { PlanMetadata } from "@/config/plans";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
 
 type Props = {
     currentPlan: Plan;
@@ -30,9 +25,14 @@ const PAID_PLANS: Exclude<Plan, "free">[] = [
     "agency",
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────────────────────────────────────
+// Per-plan accent colors — makes each card feel distinct
+const PLAN_ACCENT: Record<string, { color: string; glow: string }> = {
+    starter: { color: "#6366f1", glow: "rgba(6,182,212,0.2)" },
+    pro: { color: "#8b5cf6", glow: "rgba(139,92,246,0.25)" },
+    growth: { color: "#a78bfa", glow: "rgba(167,139,250,0.2)" },
+    business: { color: "#6366f1", glow: "rgba(6,182,212,0.2)" },
+    agency: { color: "#f59e0b", glow: "rgba(245,158,11,0.2)" },
+};
 
 export function UpgradeClient({
     currentPlan,
@@ -41,13 +41,11 @@ export function UpgradeClient({
     hasBillingPortal,
 }: Props) {
     const searchParams = useSearchParams();
-
     const [interval, setInterval] = useState<BillingInterval>("monthly");
     const [loadingPlan, setLoadingPlan] = useState<Plan | null>(null);
     const [portalLoading, setPortalLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Show success/cancel banners from Stripe redirect
     const upgradeStatus = searchParams.get("upgrade");
 
     const handleUpgrade = useCallback(
@@ -56,7 +54,7 @@ export function UpgradeClient({
             setError(null);
             setLoadingPlan(plan);
 
-            const result = await apiPost<{ url: string }>(
+            const result = await apiPost<{ url?: string; success?: boolean }>(
                 "/api/subscriptions/checkout",
                 { plan, interval },
             );
@@ -70,8 +68,12 @@ export function UpgradeClient({
                 return;
             }
 
-            // Redirect to Stripe Checkout
-            window.location.href = result.data.url;
+            // PATH B (upgrade/downgrade in-place) returns { success: true }, no URL
+            if (result.data.url) {
+                window.location.href = result.data.url;
+            } else {
+                window.location.href = "/dashboard?upgraded=true";
+            }
         },
         [loadingPlan, interval],
     );
@@ -109,13 +111,13 @@ export function UpgradeClient({
     };
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8">
+        <div className="max-w-6xl mx-auto space-y-10">
             {/* Header */}
-            <div className="text-center space-y-2">
-                <h1 className="text-3xl font-bold text-foreground">
+            <div className="text-center space-y-3">
+                <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
                     Choose your plan
                 </h1>
-                <p className="text-muted-foreground text-base">
+                <p className="text-muted-foreground text-base max-w-md mx-auto">
                     Higher-ranking listings. More clicks. More sales.
                 </p>
             </div>
@@ -124,7 +126,12 @@ export function UpgradeClient({
             {upgradeStatus === "success" && (
                 <div
                     role="alert"
-                    className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-800 text-center font-medium"
+                    className="p-4 rounded-xl text-sm text-center font-medium"
+                    style={{
+                        background: "rgba(16,185,129,0.08)",
+                        border: "1px solid rgba(16,185,129,0.2)",
+                        color: "#34d399",
+                    }}
                 >
                     🎉 Welcome to your new plan! Your account has been upgraded.
                 </div>
@@ -132,7 +139,12 @@ export function UpgradeClient({
             {upgradeStatus === "cancelled" && (
                 <div
                     role="alert"
-                    className="p-4 bg-muted border border-border rounded-xl text-sm text-muted-foreground text-center"
+                    className="p-4 rounded-xl text-sm text-center"
+                    style={{
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        color: "#94a3b8",
+                    }}
                 >
                     Checkout cancelled — no charges were made.
                 </div>
@@ -140,44 +152,65 @@ export function UpgradeClient({
             {error && (
                 <div
                     role="alert"
-                    className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 text-center"
+                    className="p-4 rounded-xl text-sm text-center"
+                    style={{
+                        background: "rgba(239,68,68,0.08)",
+                        border: "1px solid rgba(239,68,68,0.2)",
+                        color: "#fca5a5",
+                    }}
                 >
                     {error}
                 </div>
             )}
 
-            {/* Billing interval toggle */}
-            <div className="flex items-center justify-center gap-3">
-                <button
-                    type="button"
-                    onClick={() => setInterval("monthly")}
-                    className={cn(
-                        "px-4 py-2 rounded-xl text-sm font-semibold transition-all",
-                        interval === "monthly"
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground",
-                    )}
+            {/* ── Billing interval toggle ───────────────────────── */}
+            <div className="flex items-center justify-center">
+                <div
+                    className="flex items-center p-1 rounded-xl gap-1"
+                    style={{
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                    }}
                 >
-                    Monthly
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setInterval("yearly")}
-                    className={cn(
-                        "px-4 py-2 rounded-xl text-sm font-semibold transition-all",
-                        interval === "yearly"
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground",
-                    )}
-                >
-                    Annual
-                    <span className="ml-2 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-md">
-                        Save 20%
-                    </span>
-                </button>
+                    {(["monthly", "yearly"] as BillingInterval[]).map((i) => (
+                        <button
+                            key={i}
+                            type="button"
+                            onClick={() => setInterval(i)}
+                            className={cn(
+                                "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200",
+                                interval === i
+                                    ? "text-white shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground",
+                            )}
+                            style={
+                                interval === i
+                                    ? {
+                                          background:
+                                              "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                                      }
+                                    : {}
+                            }
+                        >
+                            {i === "monthly" ? "Monthly" : "Annual"}
+                            {i === "yearly" && (
+                                <span
+                                    className="ml-2 px-1.5 py-0.5 text-xs font-bold rounded-md"
+                                    style={{
+                                        background: "rgba(16,185,129,0.15)",
+                                        color: "#34d399",
+                                        border: "1px solid rgba(16,185,129,0.25)",
+                                    }}
+                                >
+                                    Save 20%
+                                </span>
+                            )}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            {/* Plan cards */}
+            {/* ── Plan cards ────────────────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 {PAID_PLANS.map((plan) => {
                     const meta = planMetadata[plan];
@@ -188,39 +221,63 @@ export function UpgradeClient({
                         interval === "yearly"
                             ? meta.yearlyPrice
                             : meta.monthlyPrice;
+                    const accent = PLAN_ACCENT[plan] ?? PLAN_ACCENT.pro;
 
                     return (
                         <div
                             key={plan}
-                            className={cn(
-                                "relative flex flex-col rounded-2xl border p-5 transition-all",
-                                meta.highlighted
-                                    ? "border-primary shadow-lg shadow-primary/10 bg-card"
-                                    : "border-border bg-card",
-                                current && "ring-2 ring-primary",
-                            )}
+                            className="relative flex flex-col rounded-2xl p-5 transition-all duration-200"
+                            style={{
+                                background: meta.highlighted
+                                    ? "rgba(139,92,246,0.08)"
+                                    : "rgba(30,41,59,0.5)",
+                                border: current
+                                    ? `2px solid ${accent.color}60`
+                                    : meta.highlighted
+                                      ? "2px solid rgba(139,92,246,0.4)"
+                                      : "1px solid rgba(255,255,255,0.07)",
+                                boxShadow: meta.highlighted
+                                    ? `0 0 40px ${accent.glow}`
+                                    : "none",
+                            }}
                         >
                             {/* Most popular badge */}
                             {meta.highlighted && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                    <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full whitespace-nowrap">
+                                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
+                                    <span
+                                        className="px-3 py-1 text-xs font-bold rounded-full text-white whitespace-nowrap"
+                                        style={{
+                                            background:
+                                                "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                                            boxShadow:
+                                                "0 0 20px rgba(139,92,246,0.5)",
+                                        }}
+                                    >
                                         ⭐ Most Popular
                                     </span>
                                 </div>
                             )}
 
                             {/* Current plan badge */}
-                            {current && (
-                                <div className="absolute -top-3 right-4">
-                                    <span className="px-2.5 py-1 bg-emerald-500 text-white text-xs font-bold rounded-full">
+                            {current && !meta.highlighted && (
+                                <div className="absolute -top-3 right-4 z-10">
+                                    <span
+                                        className="px-2.5 py-1 text-xs font-bold rounded-full text-white"
+                                        style={{
+                                            background: "rgba(16,185,129,0.9)",
+                                        }}
+                                    >
                                         Current
                                     </span>
                                 </div>
                             )}
 
                             {/* Plan name + tagline */}
-                            <div className="mb-4">
-                                <h2 className="text-base font-bold text-foreground">
+                            <div className="mb-4 mt-1">
+                                <h2
+                                    className="text-base font-bold"
+                                    style={{ color: accent.color }}
+                                >
                                     {meta.name}
                                 </h2>
                                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -231,28 +288,39 @@ export function UpgradeClient({
                             {/* Price */}
                             <div className="mb-4">
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-3xl font-bold text-foreground">
+                                    <span className="text-3xl font-bold text-foreground font-mono">
                                         ${price}
                                     </span>
                                     <span className="text-xs text-muted-foreground">
                                         /mo
                                     </span>
                                 </div>
-                                {interval === "yearly" && (
-                                    <p className="text-xs text-emerald-600 font-medium mt-0.5">
+                                {interval === "yearly" ? (
+                                    <p
+                                        className="text-xs font-medium mt-0.5"
+                                        style={{ color: "#34d399" }}
+                                    >
                                         Save {savings[plan]}% vs monthly
                                     </p>
-                                )}
-                                {interval === "monthly" && (
-                                    <p className="text-xs text-muted-foreground/70 mt-0.5">
+                                ) : (
+                                    <p className="text-xs text-muted-foreground/60 mt-0.5">
                                         or ${meta.yearlyPrice}/mo billed yearly
                                     </p>
                                 )}
                             </div>
 
-                            {/* Generations */}
-                            <div className="mb-4 px-3 py-2 bg-muted rounded-xl">
-                                <p className="text-xs font-semibold text-foreground">
+                            {/* Generations pill */}
+                            <div
+                                className="mb-4 px-3 py-2 rounded-xl"
+                                style={{
+                                    background: `${accent.color}12`,
+                                    border: `1px solid ${accent.color}25`,
+                                }}
+                            >
+                                <p
+                                    className="text-xs font-semibold"
+                                    style={{ color: accent.color }}
+                                >
                                     {meta.generationsPerMonth.toLocaleString()}{" "}
                                     listings/mo
                                 </p>
@@ -266,7 +334,8 @@ export function UpgradeClient({
                                         className="flex items-start gap-2"
                                     >
                                         <Check
-                                            className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5"
+                                            className="w-3.5 h-3.5 shrink-0 mt-0.5"
+                                            style={{ color: "#10b981" }}
                                             aria-hidden="true"
                                         />
                                         <span className="text-xs text-muted-foreground leading-relaxed">
@@ -276,37 +345,132 @@ export function UpgradeClient({
                                 ))}
                             </ul>
 
-                            {/* CTA */}
-                            <button
-                                type="button"
-                                onClick={() => handleUpgrade(plan)}
-                                disabled={current || loading || !!loadingPlan}
-                                className={cn(
-                                    "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all",
-                                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                    "disabled:cursor-not-allowed",
-                                    current
-                                        ? "bg-muted text-muted-foreground opacity-60"
-                                        : down
-                                          ? "border border-border text-muted-foreground hover:bg-muted"
-                                          : meta.highlighted
-                                            ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
-                                            : "bg-foreground text-background hover:bg-foreground/90",
-                                )}
-                            >
-                                {loading ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : current ? (
-                                    "Current plan"
-                                ) : down ? (
-                                    "Downgrade"
-                                ) : (
-                                    <>
-                                        <Zap className="w-3.5 h-3.5" />
-                                        {meta.ctaLabel}
-                                    </>
-                                )}
-                            </button>
+                            {/* ── CTA button — three distinct states ── */}
+                            {current ? (
+                                // Current plan — locked, subtle
+                                <div
+                                    className="w-full py-2.5 rounded-xl text-xs font-semibold text-center"
+                                    style={{
+                                        background: "rgba(255,255,255,0.04)",
+                                        border: "1px solid rgba(255,255,255,0.08)",
+                                        color: "#64748b",
+                                    }}
+                                >
+                                    Current plan
+                                </div>
+                            ) : down ? (
+                                // Downgrade — ghost border button
+                                <button
+                                    type="button"
+                                    onClick={() => handleUpgrade(plan)}
+                                    disabled={loading || !!loadingPlan}
+                                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold text-muted-foreground transition-all duration-150 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                                    style={{
+                                        border: "1px solid rgba(255,255,255,0.12)",
+                                        background: "transparent",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        (
+                                            e.currentTarget as HTMLElement
+                                        ).style.background =
+                                            "rgba(255,255,255,0.05)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        (
+                                            e.currentTarget as HTMLElement
+                                        ).style.background = "transparent";
+                                    }}
+                                >
+                                    {loading ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                        "Downgrade"
+                                    )}
+                                </button>
+                            ) : meta.highlighted ? (
+                                // Highlighted plan — full gradient + shimmer
+                                <button
+                                    type="button"
+                                    onClick={() => handleUpgrade(plan)}
+                                    disabled={loading || !!loadingPlan}
+                                    className="relative w-full overflow-hidden flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all duration-200 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50 hover:-translate-y-0.5"
+                                    style={{
+                                        background:
+                                            "linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa)",
+                                        boxShadow:
+                                            "0 0 30px rgba(139,92,246,0.4)",
+                                    }}
+                                >
+                                    {/* Shimmer */}
+                                    <span
+                                        className="pointer-events-none absolute inset-0"
+                                        style={{
+                                            background:
+                                                "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.2) 50%, transparent 60%)",
+                                            backgroundSize: "200% 100%",
+                                            animation:
+                                                "shimmer-sweep 2s ease-in-out infinite",
+                                        }}
+                                        aria-hidden="true"
+                                    />
+                                    <span
+                                        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+                                        style={{
+                                            background: "rgba(255,255,255,0.4)",
+                                        }}
+                                        aria-hidden="true"
+                                    />
+                                    {loading ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <>
+                                            <Zap
+                                                className="w-3.5 h-3.5"
+                                                aria-hidden="true"
+                                            />
+                                            {meta.ctaLabel}
+                                        </>
+                                    )}
+                                </button>
+                            ) : (
+                                // Regular upgrade — gradient border, transparent fill
+                                <button
+                                    type="button"
+                                    onClick={() => handleUpgrade(plan)}
+                                    disabled={loading || !!loadingPlan}
+                                    className="relative w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 hover:-translate-y-0.5 group"
+                                    style={{ padding: "1px" }}
+                                >
+                                    {/* Gradient border wrapper */}
+                                    <span
+                                        className="absolute inset-0 rounded-xl"
+                                        style={{
+                                            background: `linear-gradient(135deg, ${accent.color}, #8b5cf6)`,
+                                            opacity: 0.7,
+                                        }}
+                                        aria-hidden="true"
+                                    />
+                                    <span
+                                        className="relative flex w-full items-center justify-center gap-2 py-2.5 px-4 rounded-[11px] text-sm font-semibold transition-colors duration-150"
+                                        style={{
+                                            background: "rgba(11,17,32,0.95)",
+                                            color: accent.color,
+                                        }}
+                                    >
+                                        {loading ? (
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        ) : (
+                                            <>
+                                                <Zap
+                                                    className="w-3.5 h-3.5"
+                                                    aria-hidden="true"
+                                                />
+                                                {meta.ctaLabel}
+                                            </>
+                                        )}
+                                    </span>
+                                </button>
+                            )}
                         </div>
                     );
                 })}
@@ -314,9 +478,12 @@ export function UpgradeClient({
 
             {/* Free plan note */}
             {currentPlan === "free" && (
-                <p className="text-center text-sm text-muted-foreground">
-                    You&apos;re on the <strong>Free plan</strong> — 5
-                    listings/month. Upgrade anytime, cancel anytime.
+                <p className="text-center text-sm text-muted-foreground/60">
+                    You&apos;re on the{" "}
+                    <span className="text-foreground font-medium">
+                        Free plan
+                    </span>{" "}
+                    — 5 listings/month. Upgrade anytime, cancel anytime.
                 </p>
             )}
 
@@ -327,10 +494,10 @@ export function UpgradeClient({
                         type="button"
                         onClick={handlePortal}
                         disabled={portalLoading}
-                        className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors disabled:opacity-50"
+                        className="text-sm text-muted-foreground/60 hover:text-muted-foreground transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded"
                     >
                         {portalLoading ? (
-                            <span className="flex items-center gap-1.5">
+                            <span className="flex items-center justify-center gap-1.5">
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                 Opening portal...
                             </span>

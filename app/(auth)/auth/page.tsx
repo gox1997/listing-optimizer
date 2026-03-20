@@ -58,7 +58,7 @@ export default function AuthPage() {
                     className="absolute -top-32 -left-32 h-96 w-96 rounded-full opacity-[0.08]"
                     style={{
                         background:
-                            "radial-gradient(circle, #06b6d4, transparent 70%)",
+                            "radial-gradient(circle, #6366f1, transparent 70%)",
                     }}
                 />
                 <div
@@ -77,7 +77,7 @@ export default function AuthPage() {
                         className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-4"
                         style={{
                             background:
-                                "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                                "linear-gradient(135deg, #6366f1, #8b5cf6)",
                         }}
                     >
                         <Gem className="w-6 h-6 text-white" />
@@ -188,7 +188,7 @@ export default function AuthPage() {
                                     className={cn(
                                         "w-full px-3.5 py-2.5 rounded-xl border border-border",
                                         "bg-muted text-foreground placeholder:text-muted-foreground text-sm",
-                                        "focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50",
+                                        "focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50",
                                         "transition-all",
                                     )}
                                 />
@@ -207,7 +207,7 @@ export default function AuthPage() {
                                     )}
                                     style={{
                                         background:
-                                            "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                                            "linear-gradient(135deg, #6366f1, #8b5cf6)",
                                     }}
                                 >
                                     {isLoading ? (

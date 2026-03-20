@@ -1,4 +1,3 @@
-// components/generate/ToneSelector.tsx
 "use client";
 
 import { TONES } from "@/config/tones";
@@ -25,35 +24,52 @@ export function ToneSelector({ value, onChange, disabled }: Props) {
                 aria-label="Brand tone"
                 className="flex flex-wrap gap-2"
             >
-                {TONES.map((t) => (
-                    <Tooltip key={t.value}>
-                        <TooltipTrigger
-                            role="radio"
-                            aria-checked={value === t.value}
-                            disabled={disabled}
-                            onClick={() => onChange(t.value)}
-                            className={cn(
-                                "px-3 py-1.5 rounded-lg border-2 text-xs font-semibold transition-all duration-150",
-                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                                "disabled:opacity-50 disabled:cursor-not-allowed",
-                                value === t.value
-                                    ? "border-primary bg-primary text-primary-foreground"
-                                    : "border-border hover:border-primary/50 text-muted-foreground",
-                            )}
-                        >
-                            {t.label}
-                        </TooltipTrigger>
-                        <TooltipContent
-                            side="bottom"
-                            className="max-w-50 text-center"
-                        >
-                            <p className="font-medium">{t.description}</p>
-                            <p className="text-xs opacity-80 mt-0.5 italic">
-                                {t.example}
-                            </p>
-                        </TooltipContent>
-                    </Tooltip>
-                ))}
+                {TONES.map((t) => {
+                    const isSelected = value === t.value;
+                    return (
+                        <Tooltip key={t.value}>
+                            <TooltipTrigger
+                                role="radio"
+                                aria-checked={isSelected}
+                                disabled={disabled}
+                                onClick={() => onChange(t.value)}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-lg text-xs font-semibold",
+                                    "transition-all duration-150",
+                                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50",
+                                    "disabled:opacity-40 disabled:cursor-not-allowed",
+                                    isSelected
+                                        ? "text-white"
+                                        : "text-muted-foreground hover:text-foreground",
+                                )}
+                                style={
+                                    isSelected
+                                        ? {
+                                              background:
+                                                  "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                                              border: "1px solid transparent",
+                                          }
+                                        : {
+                                              background:
+                                                  "rgba(255,255,255,0.04)",
+                                              border: "1px solid rgba(255,255,255,0.09)",
+                                          }
+                                }
+                            >
+                                {t.label}
+                            </TooltipTrigger>
+                            <TooltipContent
+                                side="bottom"
+                                className="max-w-50 text-center"
+                            >
+                                <p className="font-medium">{t.description}</p>
+                                <p className="text-xs opacity-80 mt-0.5 italic">
+                                    {t.example}
+                                </p>
+                            </TooltipContent>
+                        </Tooltip>
+                    );
+                })}
             </div>
         </TooltipProvider>
     );

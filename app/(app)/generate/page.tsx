@@ -1,11 +1,11 @@
-// app/(app)/generate/page.tsx
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { GenerationForm } from "@/components/generate/GenerationForm";
 import { getUsageStats } from "@/services/usage.service";
 import { getUserProfile } from "@/services/user.service";
-import { Sparkles } from "lucide-react";
+import { GradientBorderCard } from "@/components/ui/GradientBorderCard";
+import { Sparkles, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { Platform, Tone } from "@/types";
 
@@ -14,7 +14,6 @@ export default async function GeneratePage() {
     const {
         data: { user },
     } = await supabase.auth.getUser();
-
     if (!user) redirect("/auth");
 
     try {
@@ -26,46 +25,58 @@ export default async function GeneratePage() {
         const defaultPlatform = (profile?.defaultPlatform ??
             "amazon") as Platform;
         const defaultTone = (profile?.defaultTone ?? "professional") as Tone;
-
         const isAtLimit = !stats.allowed;
         const isNearLimit = stats.percentUsed >= 60 && !isAtLimit;
         const usagePercent = stats.percentUsed;
 
         return (
             <div className="max-w-2xl mx-auto space-y-6">
-                {/* Page header */}
+                {/* Header */}
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <Sparkles className="w-5 h-5" aria-hidden="true" />
-                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2.5">
+                            <Sparkles
+                                className="w-6 h-6 text-indigo-400"
+                                aria-hidden="true"
+                            />
                             Generate Listing
                         </h1>
-                        <p className="text-muted-foreground text-sm sm:text-base font-mono mt-1">
-                            Fill in your product details and let the AI do the
-                            rest.
+                        <p className="text-muted-foreground text-sm mt-1">
+                            Fill in your product details — AI handles the rest.
                         </p>
                     </div>
 
-                    {/* Usage badge */}
-                    <div className="shrink-0 text-right mt-3">
-                        <p className="text-xs text-muted-foreground pt-12">
-                            <span className="font-semibold text-foreground">
+                    {/* Usage mini-bar */}
+                    <div className="shrink-0 text-right mt-12">
+                        <p className="text-xs text-muted-foreground">
+                            <span
+                                className={cn(
+                                    "font-bold font-mono",
+                                    isAtLimit
+                                        ? "text-red-400"
+                                        : isNearLimit
+                                          ? "text-amber-400"
+                                          : "text-indigo-400",
+                                )}
+                            >
                                 {stats.used}
                             </span>
-                            {" / "}
-                            {stats.limit} used
+                            <span className="text-muted-foreground/50">
+                                {" "}
+                                / {stats.limit}
+                            </span>
                         </p>
-                        <div className="w-28 h-1.5 bg-muted rounded-full mt-1.5 overflow-hidden">
+                        <div className="w-24 h-1 bg-border rounded-full mt-1.5 overflow-hidden">
                             <div
-                                className={cn(
-                                    "h-full rounded-full transition-all",
-                                    isAtLimit
-                                        ? "bg-red-500"
+                                className="h-full rounded-full transition-all"
+                                style={{
+                                    width: `${usagePercent}%`,
+                                    background: isAtLimit
+                                        ? "#ef4444"
                                         : isNearLimit
-                                          ? "bg-amber-500"
-                                          : "bg-emerald-500",
-                                )}
-                                style={{ width: `${usagePercent}%` }}
+                                          ? "#f59e0b"
+                                          : "linear-gradient(90deg, #6366f1, #8b5cf6)",
+                                }}
                                 role="progressbar"
                                 aria-valuenow={stats.used}
                                 aria-valuemin={0}
@@ -76,53 +87,59 @@ export default async function GeneratePage() {
                     </div>
                 </div>
 
-                {/* Near-limit / at-limit banner */}
+                {/* Limit banner */}
                 {(isAtLimit || isNearLimit) && (
                     <div
                         role="alert"
-                        className={cn(
-                            "p-4 rounded-xl text-sm flex items-center justify-between gap-4",
+                        className="flex items-center justify-between gap-4 p-4 rounded-xl border text-sm"
+                        style={
                             isAtLimit
-                                ? "bg-red-50 border border-red-200 text-red-800"
-                                : "bg-amber-50 border border-amber-200 text-amber-800",
-                        )}
+                                ? {
+                                      background: "rgba(239,68,68,0.08)",
+                                      borderColor: "rgba(239,68,68,0.2)",
+                                      color: "#fca5a5",
+                                  }
+                                : {
+                                      background: "rgba(245,158,11,0.08)",
+                                      borderColor: "rgba(245,158,11,0.2)",
+                                      color: "#fcd34d",
+                                  }
+                        }
                     >
-                        <p>
-                            {isAtLimit ? (
-                                <>
-                                    You&apos;ve used all{" "}
-                                    <strong>{stats.limit}</strong> generations
-                                    this month.
-                                </>
-                            ) : (
-                                <>
-                                    You&apos;ve used {usagePercent}% of your
-                                    monthly generations.
-                                </>
-                            )}{" "}
-                            Upgrade to keep generating.
-                        </p>
+                        <div className="flex items-center gap-2">
+                            <TrendingUp
+                                className="w-4 h-4 shrink-0"
+                                aria-hidden="true"
+                            />
+                            <p>
+                                {isAtLimit
+                                    ? `You've used all ${stats.limit} generations this month.`
+                                    : `You've used ${usagePercent}% of your monthly generations.`}{" "}
+                                Upgrade to keep generating.
+                            </p>
+                        </div>
                         <Link
                             href="/upgrade"
-                            className={cn(
-                                "shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-                                isAtLimit
-                                    ? "bg-red-700 text-white hover:bg-red-600"
-                                    : "bg-amber-700 text-white hover:bg-amber-600",
-                            )}
+                            className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                            style={{
+                                background:
+                                    "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                            }}
                         >
                             Upgrade
                         </Link>
                     </div>
                 )}
 
-                {/* Form */}
-                <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-                    <GenerationForm
-                        defaultPlatform={defaultPlatform}
-                        defaultTone={defaultTone}
-                    />
-                </div>
+                {/* Form — animated gradient border card */}
+                <GradientBorderCard>
+                    <div className="p-6">
+                        <GenerationForm
+                            defaultPlatform={defaultPlatform}
+                            defaultTone={defaultTone}
+                        />
+                    </div>
+                </GradientBorderCard>
             </div>
         );
     } catch (error) {

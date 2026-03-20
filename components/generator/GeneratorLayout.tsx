@@ -1,30 +1,35 @@
-// components/generator/GeneratorLayout.tsx
 "use client";
 
 import { ReactNode } from "react";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 interface Props {
-    children: [ReactNode, ReactNode]; // left, right
+    children: [ReactNode, ReactNode];
+    className?: string;
 }
 
-export function GeneratorLayout({ children }: Props) {
+export function GeneratorLayout({ children, className }: Props) {
     const [left, right] = children;
+
     return (
-        <div className="max-w-7xl mx-auto px-6 py-10">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className={cn("max-w-7xl mx-auto px-4 sm:px-6 py-8", className)}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <motion.div
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={{ opacity: 0, x: -16 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
                 >
                     {left}
                 </motion.div>
                 <motion.div
-                    initial={{ opacity: 0, x: 20 }}
+                    initial={{ opacity: 0, x: 16 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
+                    transition={{
+                        duration: 0.35,
+                        ease: "easeOut",
+                        delay: 0.08,
+                    }}
                 >
                     {right}
                 </motion.div>

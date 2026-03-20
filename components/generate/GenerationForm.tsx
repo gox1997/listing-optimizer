@@ -1,4 +1,3 @@
-// components/generate/GenerationForm.tsx
 "use client";
 
 import { useState, useCallback, useId } from "react";
@@ -33,11 +32,7 @@ const FormSchema = z.object({
 });
 
 type FormState = z.infer<typeof FormSchema>;
-
-type Props = {
-    defaultPlatform?: Platform;
-    defaultTone?: Tone;
-};
+type Props = { defaultPlatform?: Platform; defaultTone?: Tone };
 
 export function GenerationForm({
     defaultPlatform = "amazon",
@@ -94,7 +89,6 @@ export function GenerationForm({
 
     const handleSubmit = useCallback(async () => {
         if (isLoading) return;
-
         setFieldErrors({});
         setGlobalError(null);
 
@@ -137,7 +131,6 @@ export function GenerationForm({
                 router.push("/upgrade?reason=quota");
                 return;
             }
-            console.error("[GenerationForm] Generation failed:", result.error);
             setGlobalError(
                 result.error?.message ??
                     "Something went wrong. Please try again.",
@@ -186,7 +179,7 @@ export function GenerationForm({
                 {fieldErrors.productName && (
                     <p
                         id={`${formId}-name-error`}
-                        className="text-xs text-red-600 mt-1"
+                        className="text-xs text-red-400 mt-1"
                     >
                         {fieldErrors.productName}
                     </p>
@@ -209,25 +202,17 @@ export function GenerationForm({
                     placeholder="e.g. Kitchen & Dining, Sports & Outdoors"
                     maxLength={100}
                     aria-invalid={!!fieldErrors.productCategory}
-                    aria-describedby={
-                        fieldErrors.productCategory
-                            ? `${formId}-category-error`
-                            : undefined
-                    }
                     className={inputClass(!!fieldErrors.productCategory)}
                 />
                 {fieldErrors.productCategory && (
-                    <p
-                        id={`${formId}-category-error`}
-                        className="text-xs text-red-600 mt-1"
-                    >
+                    <p className="text-xs text-red-400 mt-1">
                         {fieldErrors.productCategory}
                     </p>
                 )}
             </FormSection>
 
             {/* Tone */}
-            <FormSection label="Brand Tone">
+            <FormSection label="Brand Tone" required>
                 <ToneSelector
                     value={form.tone as Tone}
                     onChange={(v) => update("tone", v)}
@@ -251,7 +236,7 @@ export function GenerationForm({
                     maxLength={MAX_DESCRIPTION_LEN}
                     className={cn(inputClass(false), "resize-none")}
                 />
-                <p className="text-xs text-muted-foreground/70 text-right mt-1">
+                <p className="text-xs text-muted-foreground/50 text-right mt-1">
                     {(form.description ?? "").length}/{MAX_DESCRIPTION_LEN}
                 </p>
             </FormSection>
@@ -282,7 +267,7 @@ export function GenerationForm({
                                     onClick={() => removeFeature(i)}
                                     disabled={isLoading}
                                     aria-label={`Remove feature ${i + 1}`}
-                                    className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    className="p-2 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
                                 >
                                     <X className="w-4 h-4" aria-hidden="true" />
                                 </button>
@@ -295,7 +280,7 @@ export function GenerationForm({
                             type="button"
                             onClick={addFeature}
                             disabled={isLoading}
-                            className="flex items-center gap-1.5 text-base text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                            className="flex items-center gap-1.5 text-sm text-indigo-400/70 hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded"
                         >
                             <Plus className="w-4 h-4" aria-hidden="true" />
                             Add feature
@@ -308,7 +293,7 @@ export function GenerationForm({
             <FormSection
                 label="Primary Keyword"
                 inputId={`${formId}-primary-kw`}
-                hint="Optional — the single most important keyword to rank for"
+                hint="Optional — most important keyword to rank for"
             >
                 <input
                     id={`${formId}-primary-kw`}
@@ -344,46 +329,130 @@ export function GenerationForm({
                 <div
                     role="alert"
                     aria-live="assertive"
-                    className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700"
+                    className="p-4 rounded-xl text-sm"
+                    style={{
+                        background: "rgba(239,68,68,0.08)",
+                        border: "1px solid rgba(239,68,68,0.2)",
+                        color: "#fca5a5",
+                    }}
                 >
                     {globalError}
                 </div>
             )}
 
-            {/* Submit */}
-            <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isLoading}
-                aria-busy={isLoading}
-                className={cn(
-                    "w-full flex items-center justify-center gap-2 py-4",
-                    "bg-primary text-primary-foreground rounded-xl font-semibold font-mono text-base",
-                    "hover:bg-primary/90 transition-colors",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                    "disabled:opacity-60 disabled:cursor-not-allowed",
-                )}
-            >
-                {isLoading ? (
-                    <>
-                        <span
-                            className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
-                            aria-hidden="true"
-                        />
-                        Generating your listing...
-                    </>
-                ) : (
-                    <>
-                        <Sparkles className="w-4 h-4" aria-hidden="true" />
-                        Generate Listing
-                    </>
-                )}
-            </button>
+            {/* ── THE GENERATE BUTTON — elite CTA ──────────────── */}
+            <GenerateButton isLoading={isLoading} onClick={handleSubmit} />
         </div>
     );
 }
 
 GenerationForm.displayName = "GenerationForm";
+
+// ── Elite Generate Button ─────────────────────────────────────────
+
+function GenerateButton({
+    isLoading,
+    onClick,
+}: {
+    isLoading: boolean;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={isLoading}
+            aria-busy={isLoading}
+            className={cn(
+                "group relative w-full overflow-hidden rounded-xl py-4",
+                "flex items-center justify-center gap-2.5",
+                "text-base font-bold text-white tracking-wide",
+                "transition-all duration-300",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                "disabled:cursor-not-allowed",
+                isLoading ? "opacity-90" : "hover:-translate-y-0.5",
+            )}
+            style={{
+                background:
+                    "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%)",
+                boxShadow: isLoading
+                    ? "0 0 20px rgba(139,92,246,0.3)"
+                    : "0 0 40px rgba(139,92,246,0.4), 0 0 80px rgba(99,102,241,0.2)",
+            }}
+        >
+            {!isLoading && (
+                <span
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                        background:
+                            "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%)",
+                        backgroundSize: "200% 100%",
+                        animation: "shimmer-sweep 2.4s ease-in-out infinite",
+                    }}
+                    aria-hidden="true"
+                />
+            )}
+            <span
+                className="pointer-events-none absolute inset-x-0 top-0 h-px"
+                style={{ background: "rgba(255,255,255,0.35)" }}
+                aria-hidden="true"
+            />
+            {isLoading ? (
+                <>
+                    <span
+                        className="relative w-5 h-5 shrink-0"
+                        aria-hidden="true"
+                    >
+                        <span className="absolute inset-0 rounded-full border-2 border-white/20" />
+                        <span
+                            className="absolute inset-0 rounded-full border-2 border-transparent border-t-white"
+                            style={{ animation: "spin 0.8s linear infinite" }}
+                        />
+                        <span className="absolute top-1/2 left-1/2 w-1 h-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
+                    </span>
+                    <span className="font-semibold tracking-normal">
+                        Generating your listing
+                        <DotPulse />
+                    </span>
+                </>
+            ) : (
+                <>
+                    <Sparkles
+                        className="w-5 h-5 shrink-0 text-indigo-100"
+                        aria-hidden="true"
+                    />
+                    <span>Generate Listing</span>
+                    <span
+                        className="text-white/70 transition-transform duration-200 group-hover:translate-x-1"
+                        aria-hidden="true"
+                    >
+                        →
+                    </span>
+                </>
+            )}
+        </button>
+    );
+}
+
+// Animated "..." for loading state
+function DotPulse() {
+    return (
+        <span className="inline-flex gap-0.5 ml-1" aria-hidden="true">
+            {[0, 1, 2].map((i) => (
+                <span
+                    key={i}
+                    className="inline-block w-1 h-1 rounded-full bg-white/70"
+                    style={{
+                        animation: "dot-pulse 1.2s ease-in-out infinite",
+                        animationDelay: `${i * 0.2}s`,
+                    }}
+                />
+            ))}
+        </span>
+    );
+}
+
+// ── Form helpers ──────────────────────────────────────────────────
 
 function FormSection({
     label,
@@ -402,22 +471,26 @@ function FormSection({
 }) {
     return (
         <div className="space-y-2">
-            <div className="flex items-baseline gap-1 flex-wrap">
+            <div className="flex items-baseline gap-1.5 flex-wrap">
                 {inputId ? (
                     <label
                         htmlFor={inputId}
-                        className="text-xl font-semibold font-mono text-foreground"
+                        className="text-sm font-semibold text-foreground"
                     >
                         {label}
                     </label>
                 ) : (
-                    <span className="text-xl font-semibold font-mono text-foreground">
+                    <span className="text-sm font-semibold text-foreground">
                         {label}
                     </span>
                 )}
-                {required && <span className="text-xs text-red-500">*</span>}
+                {required && (
+                    <span className="text-xs text-red-400" aria-hidden="true">
+                        *
+                    </span>
+                )}
                 {hint && !error && (
-                    <span className="text-xs text-muted-foreground/70 ml-1">
+                    <span className="text-xs text-muted-foreground/60">
                         {hint}
                     </span>
                 )}
@@ -429,12 +502,12 @@ function FormSection({
 
 function inputClass(hasError: boolean) {
     return cn(
-        "w-full px-3 py-2.5 rounded-xl border text-base text-foreground",
-        "placeholder:text-muted-foreground/50 transition-shadow",
+        "w-full px-3.5 py-2.5 rounded-xl text-sm text-foreground",
+        "placeholder:text-muted-foreground/40 transition-all duration-150",
         "focus:outline-none focus:ring-2 focus:ring-offset-0",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         hasError
-            ? "border-red-300 focus:ring-red-500"
-            : "border-border focus:ring-ring focus:border-transparent",
+            ? "border border-red-500/50 bg-red-500/5 focus:ring-red-500/40"
+            : "border border-border bg-muted/30 focus:ring-indigo-500/40 focus:border-indigo-500/40",
     );
 }

@@ -1,8 +1,6 @@
-// components/generate/PlatformSelector.tsx
 "use client";
 
 import Image from "next/image";
-
 import { PLATFORMS } from "@/config/platforms";
 import { cn } from "@/lib/utils/cn";
 import { Check } from "lucide-react";
@@ -15,7 +13,6 @@ type Props = {
     disabled?: boolean;
 };
 
-// Map platform to React component (icon)
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
     amazon: (
         <Image
@@ -48,7 +45,7 @@ const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
         />
     ),
     general: (
-        <SlGlobe color="blue" width={20} height={20} className="w-5 h-5" />
+        <SlGlobe width={20} height={20} className="w-5 h-5 text-indigo-200" />
     ),
 };
 
@@ -70,15 +67,26 @@ export function PlatformSelector({ value, onChange, disabled }: Props) {
                         disabled={disabled}
                         onClick={() => onChange(p.value)}
                         className={cn(
-                            "relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2",
+                            "relative flex flex-col items-center gap-1.5 p-3 rounded-xl",
                             "text-center transition-all duration-150",
                             "hover:scale-[1.02] active:scale-[0.98]",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                            "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50",
+                            "disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100",
                             isSelected
-                                ? "border-primary bg-muted text-foreground"
-                                : "border-border hover:border-primary/50 text-muted-foreground",
+                                ? "text-foreground"
+                                : "text-muted-foreground hover:text-foreground",
                         )}
+                        style={
+                            isSelected
+                                ? {
+                                      background: "rgba(99,102,241,0.1)",
+                                      border: "2px solid rgba(99,102,241,0.5)",
+                                  }
+                                : {
+                                      background: "rgba(255,255,255,0.03)",
+                                      border: "2px solid rgba(255,255,255,0.08)",
+                                  }
+                        }
                     >
                         <span
                             className="flex items-center justify-center"
@@ -89,7 +97,7 @@ export function PlatformSelector({ value, onChange, disabled }: Props) {
                         <span className="text-sm font-semibold">{p.label}</span>
                         {isSelected && (
                             <Check
-                                className="absolute top-2 right-2 w-3.5 h-3.5 text-white"
+                                className="absolute top-2 right-2 w-3.5 h-3.5 text-indigo-400"
                                 aria-hidden="true"
                             />
                         )}

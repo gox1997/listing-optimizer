@@ -1,4 +1,3 @@
-// app/(app)/generate/[id]/error.tsx
 "use client";
 
 import { useEffect } from "react";
@@ -18,8 +17,14 @@ export default function GenerationError({ error, reset }: Props) {
 
     return (
         <div className="max-w-2xl mx-auto">
-            <div className="text-center py-20 bg-card border border-red-100 rounded-2xl">
-                <p className="text-lg font-semibold text-foreground">
+            <div
+                className="text-center py-20 rounded-2xl"
+                style={{
+                    background: "rgba(239,68,68,0.05)",
+                    border: "1px solid rgba(239,68,68,0.15)",
+                }}
+            >
+                <p className="text-base font-semibold text-foreground">
                     Something went wrong
                 </p>
                 <p className="text-muted-foreground text-sm mt-1 mb-6">
@@ -28,13 +33,17 @@ export default function GenerationError({ error, reset }: Props) {
                 <div className="flex items-center justify-center gap-3">
                     <button
                         onClick={reset}
-                        className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                        style={{
+                            background:
+                                "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                        }}
                     >
                         Try again
                     </button>
                     <button
                         onClick={() => router.push("/history")}
-                        className="px-5 py-2.5 border border-border text-muted-foreground rounded-xl text-sm font-semibold hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="px-5 py-2.5 border border-border text-muted-foreground rounded-xl text-sm font-semibold hover:bg-accent hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
                     >
                         Back to history
                     </button>

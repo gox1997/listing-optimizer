@@ -1,4 +1,3 @@
-// components/generate/CopyButton.tsx
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
@@ -24,14 +23,12 @@ export function CopyButton({ text, label, className }: Props) {
 
     const handleCopy = useCallback(async () => {
         if (copied) return;
-
         try {
             await navigator.clipboard.writeText(text);
             setCopied(true);
             clearTimer();
             timeoutRef.current = setTimeout(() => setCopied(false), 2000);
         } catch {
-            // Fallback for older browsers
             const el = document.createElement("textarea");
             el.value = text;
             el.style.position = "fixed";
@@ -56,17 +53,15 @@ export function CopyButton({ text, label, className }: Props) {
             onClick={handleCopy}
             aria-label={copied ? "Copied!" : `Copy ${label ?? "to clipboard"}`}
             className={cn(
-                "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg",
+                "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg min-h-8 min-w-8",
                 "text-xs font-medium transition-all duration-150",
-                "active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-                // Increase tap target on mobile
-                "min-h-8 min-w-8",
+                "active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50",
                 copied
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    : "bg-muted text-muted-foreground border border-border hover:bg-muted-foreground/20",
+                    ? "text-emerald-400 border border-emerald-500/25"
+                    : "text-muted-foreground border border-border hover:text-foreground hover:border-white/15 hover:bg-white/5",
                 className,
             )}
+            style={copied ? { background: "rgba(16,185,129,0.08)" } : {}}
         >
             {copied ? (
                 <>

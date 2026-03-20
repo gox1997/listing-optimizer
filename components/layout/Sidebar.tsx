@@ -55,12 +55,12 @@ function SidebarContent({
                 <div
                     className="flex h-8 w-8 items-center justify-center rounded-lg shrink-0"
                     style={{
-                        background: "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                        background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
                     }}
                 >
                     <Gem className="h-4 w-4 text-white" />
                 </div>
-                <span className="font-bold text-base tracking-tight text-foreground">
+                <span className="font-bold text-base sm:text-xl tracking-tight text-foreground">
                     ListingGem
                 </span>
             </div>
@@ -91,7 +91,7 @@ function SidebarContent({
                                 isActive
                                     ? {
                                           background:
-                                              "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                                              "linear-gradient(135deg, #6366f1, #8b5cf6)",
                                       }
                                     : {}
                             }
@@ -132,7 +132,7 @@ function SidebarContent({
                                     ? "text-red-400"
                                     : isNearLimit
                                       ? "text-amber-400"
-                                      : "text-cyan-400",
+                                      : "text-indigo-400",
                             )}
                         >
                             {used} / {limit}
@@ -151,7 +151,7 @@ function SidebarContent({
                                     ? "#ef4444"
                                     : isNearLimit
                                       ? "#f59e0b"
-                                      : "linear-gradient(90deg, #06b6d4, #8b5cf6)",
+                                      : "linear-gradient(90deg,#6366f1, #8b5cf6)",
                             }}
                         />
                     </div>
@@ -160,8 +160,8 @@ function SidebarContent({
                         <span
                             className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold"
                             style={{
-                                background: "rgba(6,182,212,0.12)",
-                                color: "#06b6d4",
+                                background: "rgba(99,102,241,0.12)",
+                                color: "#6366f1",
                                 border: "1px solid rgba(6,182,212,0.2)",
                             }}
                         >
@@ -171,7 +171,7 @@ function SidebarContent({
                             <Link
                                 href="/upgrade"
                                 onClick={closeMobile}
-                                className="text-xs font-medium text-violet-400 hover:text-violet-300 transition-colors"
+                                className="text-xs font-medium text-#c084fc hover:text-violet-300 transition-colors"
                             >
                                 Upgrade →
                             </Link>
@@ -188,7 +188,7 @@ function SidebarContent({
                         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
                         style={{
                             background:
-                                "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                                "linear-gradient(135deg, #6366f1, #8b5cf6)",
                         }}
                         aria-hidden="true"
                     >
@@ -262,13 +262,13 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
             >
                 <div className="flex items-center gap-2">
                     <div
-                        className="flex h-7 w-7 items-center justify-center rounded-lg"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg"
                         style={{
                             background:
-                                "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                                "linear-gradient(135deg, #6366f1, #8b5cf6)",
                         }}
                     >
-                        <Gem className="h-3.5 w-3.5 text-white" />
+                        <Gem className="h-4 w-4 text-white" />
                     </div>
                     <span className="font-bold text-sm text-foreground">
                         ListingGem
@@ -311,7 +311,7 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
                                     className="flex h-8 w-8 items-center justify-center rounded-lg"
                                     style={{
                                         background:
-                                            "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                                            "linear-gradient(135deg, #6366f1, #8b5cf6)",
                                     }}
                                 >
                                     <Gem className="h-4 w-4 text-white" />

@@ -30,23 +30,52 @@ export default async function AppLayout({
 
     return (
         <div className="flex min-h-screen bg-background">
-            {/* Single ambient glow — top left only */}
+            {/* Animated floating orbs */}
             <div
-                className="pointer-events-none fixed inset-0 z-0"
+                className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
                 aria-hidden="true"
             >
+                {/* Orb 1 — indigo, top left */}
                 <div
-                    className="absolute -top-40 -left-40 h-150 w-150nded-full opacity-[0.07]"
+                    className="absolute rounded-full"
                     style={{
+                        top: "-160px",
+                        left: "-160px",
+                        width: "600px",
+                        height: "600px",
                         background:
-                            "radial-gradient(circle, #06b6d4 0%, transparent 70%)",
+                            "radial-gradient(circle, #6366f1 0%, transparent 70%)",
+                        opacity: 0.07,
+                        animation: "orb-drift-1 12s ease-in-out infinite",
                     }}
                 />
+                {/* Orb 2 — purple, bottom right */}
                 <div
-                    className="absolute top-1/2 -right-40 h-100 w-100 rounded-full opacity-[0.05]"
+                    className="absolute rounded-full"
                     style={{
+                        bottom: "-240px",
+                        right: "-240px",
+                        width: "500px",
+                        height: "500px",
                         background:
                             "radial-gradient(circle, #8b5cf6 0%, transparent 70%)",
+                        opacity: 0.06,
+                        animation: "orb-drift-2 15s ease-in-out infinite",
+                    }}
+                />
+                {/* Orb 3 — violet, mid right */}
+                <div
+                    className="absolute rounded-full"
+                    style={{
+                        top: "33%",
+                        right: "-80px",
+                        width: "300px",
+                        height: "300px",
+                        background:
+                            "radial-gradient(circle, #c084fc 0%, transparent 70%)",
+                        opacity: 0.04,
+                        animation:
+                            "orb-drift-1 20s ease-in-out infinite reverse",
                     }}
                 />
             </div>
