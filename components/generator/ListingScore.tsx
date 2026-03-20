@@ -88,7 +88,7 @@ function BreakdownItem({ label, value }: { label: string; value: number }) {
             </div>
             <div className="h-1.5 bg-[#334155] rounded-full overflow-hidden">
                 <div
-                    className="h-full bg-gradient-to-r from-cyan-500 to-purple-600"
+                    className="h-full bg-linear-to-r from-cyan-500 to-purple-600"
                     style={{ width: `${value}%` }}
                 />
             </div>

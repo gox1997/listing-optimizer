@@ -1,5 +1,4 @@
 "use client";
-// app/onboarding/page.tsx
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,12 +6,8 @@ import { apiPatch } from "@/lib/utils/api";
 import { PLATFORMS } from "@/config/platforms";
 import { TONES } from "@/config/tones";
 import { cn } from "@/lib/utils/cn";
-import { Sparkles, ArrowRight, Check } from "lucide-react";
+import { Gem, ArrowRight, Check } from "lucide-react";
 import type { Platform, Tone } from "@/types";
-
-/* ------------------------------------------------------------------ */
-/*  Module-scope constants                                              */
-/* ------------------------------------------------------------------ */
 
 const NICHES = [
     { value: "home_garden", label: "Home & Garden", emoji: "🏠" },
@@ -33,17 +28,11 @@ type OnboardingState = {
     tone: Tone;
 };
 
-/* ------------------------------------------------------------------ */
-/*  Component                                                           */
-/* ------------------------------------------------------------------ */
-
 export default function OnboardingPage() {
     const router = useRouter();
-
     const [step, setStep] = useState(1);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
     const [data, setData] = useState<OnboardingState>({
         platform: "amazon",
         niche: "",
@@ -69,53 +58,73 @@ export default function OnboardingPage() {
         if (result.success) {
             router.push("/generate");
         } else {
-            setError(
-                "Failed to save preferences. You can update them in Settings.",
-            );
+            setError("Failed to save. Taking you to the app anyway.");
             setTimeout(() => router.push("/generate"), 2000);
         }
     };
 
-    const progressWidth = `${(step / TOTAL_STEPS) * 100}%`;
-
     return (
-        <div className="min-h-screen bg-linear-to-b from-muted via-amber-500/10 to-muted flex items-center justify-center p-4">
-            <div className="w-full max-w-lg">
+        <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+            {/* Ambient glows */}
+            <div
+                className="pointer-events-none absolute inset-0"
+                aria-hidden="true"
+            >
+                <div
+                    className="absolute -top-40 left-1/2 -translate-x-1/2 h-125 w-125 rounded-full opacity-[0.07]"
+                    style={{
+                        background:
+                            "radial-gradient(circle, #8b5cf6, transparent 70%)",
+                    }}
+                />
+            </div>
+
+            <div className="relative z-10 w-full max-w-lg">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-slate-900 rounded-xl mb-3">
-                        <Sparkles className="w-6 h-6 text-white" />
+                    <div
+                        className="inline-flex items-center justify-center w-11 h-11 rounded-xl mb-3"
+                        style={{
+                            background:
+                                "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                        }}
+                    >
+                        <Gem className="w-5 h-5 text-white" />
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-900">
-                        Welcome aboard!
+                    <h1 className="text-2xl font-bold text-foreground">
+                        Welcome to ListingGem
                     </h1>
-                    <p className="text-slate-500 text-sm sm:text-base mt-1">
-                        Quick setup — 3 questions to personalize your experience
+                    <p className="text-muted-foreground text-sm mt-1">
+                        3 quick questions to personalize your experience
                     </p>
                 </div>
 
                 {/* Progress bar */}
-                <div className="h-1.5 bg-slate-200 rounded-full mb-8 overflow-hidden">
+                <div className="h-1 bg-border rounded-full mb-8 overflow-hidden">
                     <div
-                        className="h-full bg-slate-900 rounded-full transition-all duration-300"
-                        style={{ width: progressWidth }}
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                            width: `${(step / TOTAL_STEPS) * 100}%`,
+                            background:
+                                "linear-gradient(90deg, #06b6d4, #8b5cf6)",
+                        }}
                     />
                 </div>
 
                 {/* Card */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
-                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                <div className="bg-card border border-border rounded-2xl p-8 shadow-2xl">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
                         Step {step} of {TOTAL_STEPS}
-                    </div>
+                    </p>
 
-                    {/* Step 1 — Platform */}
+                    {/* ── Step 1 — Platform ── */}
                     {step === 1 && (
                         <div className="space-y-5">
                             <div>
-                                <h2 className="text-xl font-bold text-slate-900 mb-1">
+                                <h2 className="text-xl font-bold text-foreground mb-1">
                                     Where do you primarily sell?
                                 </h2>
-                                <p className="text-slate-500 text-sm">
+                                <p className="text-muted-foreground text-sm">
                                     We&apos;ll optimize listings for this
                                     platform by default.
                                 </p>
@@ -129,16 +138,16 @@ export default function OnboardingPage() {
                                             update("platform", p.value)
                                         }
                                         className={cn(
-                                            "p-4 rounded-xl border-2 text-left transition-all",
+                                            "p-4 rounded-xl border-2 text-left transition-all duration-150",
                                             data.platform === p.value
-                                                ? "border-slate-900 bg-slate-50"
-                                                : "border-slate-200 hover:border-slate-300",
+                                                ? "border-cyan-500/60 bg-cyan-500/10 text-foreground"
+                                                : "border-border bg-muted/30 hover:border-border/80 hover:bg-muted/60 text-muted-foreground hover:text-foreground",
                                         )}
                                     >
-                                        <p className="font-semibold text-sm text-slate-900">
+                                        <p className="font-semibold text-sm">
                                             {p.label}
                                         </p>
-                                        <p className="text-xs text-slate-500 mt-1 leading-snug">
+                                        <p className="text-xs text-muted-foreground mt-1 leading-snug">
                                             {p.description}
                                         </p>
                                     </button>
@@ -147,22 +156,26 @@ export default function OnboardingPage() {
 
                             <button
                                 onClick={() => setStep(2)}
-                                className="w-full flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-xl font-semibold text-sm hover:bg-slate-700 transition-colors"
+                                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                                style={{
+                                    background:
+                                        "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                                }}
                             >
                                 Next <ArrowRight className="w-4 h-4" />
                             </button>
                         </div>
                     )}
 
-                    {/* Step 2 — Niche */}
+                    {/* ── Step 2 — Niche ── */}
                     {step === 2 && (
                         <div className="space-y-5">
                             <div>
-                                <h2 className="text-xl font-bold text-slate-900 mb-1">
+                                <h2 className="text-xl font-bold text-foreground mb-1">
                                     What&apos;s your product niche?
                                 </h2>
-                                <p className="text-slate-500 text-sm">
-                                    Helps us give better suggestions and tips.
+                                <p className="text-muted-foreground text-sm">
+                                    Helps us give better AI suggestions.
                                 </p>
                             </div>
 
@@ -172,13 +185,15 @@ export default function OnboardingPage() {
                                         key={n.value}
                                         onClick={() => update("niche", n.value)}
                                         className={cn(
-                                            "flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 text-sm font-medium text-left transition-all",
+                                            "flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 text-sm font-medium text-left transition-all duration-150",
                                             data.niche === n.value
-                                                ? "border-slate-900 bg-slate-900 text-white"
-                                                : "border-slate-200 text-slate-700 hover:border-slate-300",
+                                                ? "border-purple-500/60 bg-purple-500/10 text-foreground"
+                                                : "border-border bg-muted/30 hover:border-border/80 hover:bg-muted/60 text-muted-foreground hover:text-foreground",
                                         )}
                                     >
-                                        <span>{n.emoji}</span>
+                                        <span className="text-base">
+                                            {n.emoji}
+                                        </span>
                                         {n.label}
                                     </button>
                                 ))}
@@ -187,13 +202,17 @@ export default function OnboardingPage() {
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setStep(1)}
-                                    className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                                    className="flex-1 py-3 border border-border rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                                 >
                                     Back
                                 </button>
                                 <button
                                     onClick={() => setStep(3)}
-                                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-xl font-semibold text-sm hover:bg-slate-700 transition-colors"
+                                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                                    style={{
+                                        background:
+                                            "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                                    }}
                                 >
                                     Next <ArrowRight className="w-4 h-4" />
                                 </button>
@@ -201,16 +220,15 @@ export default function OnboardingPage() {
                         </div>
                     )}
 
-                    {/* Step 3 — Tone */}
+                    {/* ── Step 3 — Tone ── */}
                     {step === 3 && (
                         <div className="space-y-5">
                             <div>
-                                <h2 className="text-xl font-bold text-slate-900 mb-1">
+                                <h2 className="text-xl font-bold text-foreground mb-1">
                                     What&apos;s your brand voice?
                                 </h2>
-                                <p className="text-slate-500 text-sm">
-                                    This sets the default tone for your
-                                    listings.
+                                <p className="text-muted-foreground text-sm">
+                                    Sets the default tone for your listings.
                                 </p>
                             </div>
 
@@ -220,24 +238,24 @@ export default function OnboardingPage() {
                                         key={t.value}
                                         onClick={() => update("tone", t.value)}
                                         className={cn(
-                                            "w-full p-4 rounded-xl border-2 text-left transition-all",
+                                            "w-full p-4 rounded-xl border-2 text-left transition-all duration-150",
                                             data.tone === t.value
-                                                ? "border-slate-900 bg-slate-50"
-                                                : "border-slate-200 hover:border-slate-300",
+                                                ? "border-cyan-500/60 bg-cyan-500/10"
+                                                : "border-border bg-muted/30 hover:border-border/80 hover:bg-muted/60",
                                         )}
                                     >
                                         <div className="flex items-center justify-between">
-                                            <p className="font-semibold text-sm text-slate-900">
+                                            <p className="font-semibold text-sm text-foreground">
                                                 {t.label}
                                             </p>
                                             {data.tone === t.value && (
-                                                <Check className="w-4 h-4 text-slate-900" />
+                                                <Check className="w-4 h-4 text-cyan-400" />
                                             )}
                                         </div>
-                                        <p className="text-xs text-slate-500 mt-1">
+                                        <p className="text-xs text-muted-foreground mt-1">
                                             {t.description}
                                         </p>
-                                        <p className="text-xs text-slate-400 mt-1 italic">
+                                        <p className="text-xs text-muted-foreground/60 mt-1 italic">
                                             {t.example}
                                         </p>
                                     </button>
@@ -245,29 +263,31 @@ export default function OnboardingPage() {
                             </div>
 
                             {error && (
-                                <p className="text-sm text-red-600">{error}</p>
+                                <p className="text-sm text-red-400">{error}</p>
                             )}
 
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setStep(2)}
-                                    className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                                    className="flex-1 py-3 border border-border rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                                 >
                                     Back
                                 </button>
                                 <button
                                     onClick={handleFinish}
                                     disabled={isSaving}
-                                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-xl font-semibold text-sm hover:bg-slate-700 disabled:opacity-60 transition-colors"
+                                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                                    style={{
+                                        background:
+                                            "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                                    }}
                                 >
                                     {isSaving ? (
-                                        "Saving..."
+                                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                     ) : (
                                         <>
-                                            <Sparkles className="w-4 h-4 ml-1" />{" "}
-                                            <span className="mr-1">
-                                                Start Generating
-                                            </span>
+                                            <Gem className="w-4 h-4" />
+                                            Start Generating
                                         </>
                                     )}
                                 </button>

@@ -1,13 +1,9 @@
-// app/(auth)/auth/page.tsx
 "use client";
 
 import { useState, useMemo } from "react";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
-import { Sparkles, Mail } from "lucide-react";
+import { Gem, Mail } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-
-// APP_NAME not yet exported from config — defined locally until added
-const APP_NAME = "ListingGem";
 
 export default function AuthPage() {
     const [email, setEmail] = useState("");
@@ -16,13 +12,11 @@ export default function AuthPage() {
     const [sent, setSent] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Memoized — never recreated on re-render
     const supabase = useMemo(() => createClientSupabaseClient(), []);
 
     const handleMagicLink = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email.trim()) return;
-
         setIsLoading(true);
         setError(null);
 
@@ -34,12 +28,8 @@ export default function AuthPage() {
         });
 
         setIsLoading(false);
-
-        if (error) {
-            setError(error.message);
-        } else {
-            setSent(true);
-        }
+        if (error) setError(error.message);
+        else setSent(true);
     };
 
     const handleGoogle = async () => {
@@ -48,58 +38,90 @@ export default function AuthPage() {
 
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
-            options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
-            },
+            options: { redirectTo: `${window.location.origin}/auth/callback` },
         });
 
         if (error) {
             setError(error.message);
             setIsGoogleLoading(false);
         }
-        // On success the page redirects to Google — no need to reset loading
     };
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-slate-50 via-amber-50 to-slate-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-sm">
+        <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+            {/* Ambient glows */}
+            <div
+                className="pointer-events-none absolute inset-0"
+                aria-hidden="true"
+            >
+                <div
+                    className="absolute -top-32 -left-32 h-96 w-96 rounded-full opacity-[0.08]"
+                    style={{
+                        background:
+                            "radial-gradient(circle, #06b6d4, transparent 70%)",
+                    }}
+                />
+                <div
+                    className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full opacity-[0.08]"
+                    style={{
+                        background:
+                            "radial-gradient(circle, #8b5cf6, transparent 70%)",
+                    }}
+                />
+            </div>
+
+            <div className="relative z-10 w-full max-w-sm">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-slate-900 rounded-2xl mb-4">
-                        <Sparkles className="w-6 h-6 text-white" />
+                    <div
+                        className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-4"
+                        style={{
+                            background:
+                                "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                        }}
+                    >
+                        <Gem className="w-6 h-6 text-white" />
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-900">
-                        {APP_NAME}
+                    <h1 className="text-2xl font-bold text-foreground">
+                        ListingGem
                     </h1>
-                    <p className="text-slate-500 text-sm mt-1">
+                    <p className="text-muted-foreground text-sm mt-1">
                         AI-powered listing optimization
                     </p>
                 </div>
 
                 {/* Card */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div className="bg-card border border-border rounded-2xl p-6 shadow-2xl">
                     {sent ? (
                         <div className="text-center py-4">
-                            <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Mail className="w-6 h-6 text-emerald-500" />
+                            <div
+                                className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+                                style={{
+                                    background: "rgba(16,185,129,0.12)",
+                                    border: "1px solid rgba(16,185,129,0.2)",
+                                }}
+                            >
+                                <Mail className="w-5 h-5 text-emerald-400" />
                             </div>
-                            <h2 className="font-semibold text-slate-900 mb-2">
+                            <h2 className="font-semibold text-foreground mb-2">
                                 Check your email
                             </h2>
-                            <p className="text-base text-slate-500">
-                                We sent a sign-in link to{" "}
-                                <strong>{email}</strong>
+                            <p className="text-sm text-muted-foreground">
+                                Sign-in link sent to{" "}
+                                <span className="text-foreground font-medium">
+                                    {email}
+                                </span>
                             </p>
                             <button
                                 onClick={() => setSent(false)}
-                                className="mt-4 text-base text-slate-400 hover:text-slate-600 transition-colors"
+                                className="mt-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 Use a different email
                             </button>
                         </div>
                     ) : (
                         <>
-                            <h2 className="font-semibold text-slate-900 mb-6 text-center">
+                            <h2 className="font-semibold text-foreground mb-6 text-center">
                                 Sign in to your account
                             </h2>
 
@@ -109,16 +131,15 @@ export default function AuthPage() {
                                 disabled={isGoogleLoading || isLoading}
                                 className={cn(
                                     "w-full flex items-center justify-center gap-3",
-                                    "px-4 py-2.5 border border-slate-200 rounded-xl",
-                                    "text-base font-medium text-slate-700",
-                                    "hover:bg-slate-50 transition-colors",
+                                    "px-4 py-2.5 rounded-xl border border-border",
+                                    "text-sm font-medium text-foreground",
+                                    "bg-muted hover:bg-accent transition-colors",
                                     "disabled:opacity-50 disabled:cursor-not-allowed",
                                 )}
                             >
                                 {isGoogleLoading ? (
-                                    <span className="w-4 h-4 border-2 border-slate-300 border-t-slate-700 rounded-full animate-spin" />
+                                    <span className="w-4 h-4 border-2 border-muted-foreground border-t-foreground rounded-full animate-spin" />
                                 ) : (
-                                    // Inline Google G — no external icon dependency
                                     <svg
                                         width="16"
                                         height="16"
@@ -146,16 +167,14 @@ export default function AuthPage() {
                                 Continue with Google
                             </button>
 
-                            {/* Divider */}
                             <div className="flex items-center gap-3 my-4">
-                                <div className="flex-1 h-px bg-slate-200" />
-                                <span className="text-base text-slate-400">
+                                <div className="flex-1 h-px bg-border" />
+                                <span className="text-xs text-muted-foreground">
                                     or
                                 </span>
-                                <div className="flex-1 h-px bg-slate-200" />
+                                <div className="flex-1 h-px bg-border" />
                             </div>
 
-                            {/* Magic link form */}
                             <form
                                 onSubmit={handleMagicLink}
                                 className="space-y-3"
@@ -167,10 +186,10 @@ export default function AuthPage() {
                                     placeholder="you@example.com"
                                     required
                                     className={cn(
-                                        "w-full px-3.5 py-2.5 border border-slate-200 rounded-xl",
-                                        "text-sm text-slate-900 placeholder:text-slate-400",
-                                        "focus:outline-none focus:ring-2 focus:ring-slate-900",
-                                        "transition-shadow",
+                                        "w-full px-3.5 py-2.5 rounded-xl border border-border",
+                                        "bg-muted text-foreground placeholder:text-muted-foreground text-sm",
+                                        "focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50",
+                                        "transition-all",
                                     )}
                                 />
                                 <button
@@ -182,11 +201,14 @@ export default function AuthPage() {
                                     }
                                     className={cn(
                                         "w-full flex items-center justify-center gap-2",
-                                        "px-4 py-2.5 bg-slate-900 text-white rounded-xl",
-                                        "text-sm font-semibold",
-                                        "hover:bg-slate-700 transition-colors",
+                                        "px-4 py-2.5 rounded-xl text-sm font-semibold text-white",
                                         "disabled:opacity-50 disabled:cursor-not-allowed",
+                                        "transition-opacity",
                                     )}
+                                    style={{
+                                        background:
+                                            "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                                    }}
                                 >
                                     {isLoading ? (
                                         <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -198,7 +220,7 @@ export default function AuthPage() {
                             </form>
 
                             {error && (
-                                <p className="mt-3 text-sm text-red-600 text-center">
+                                <p className="mt-3 text-sm text-red-400 text-center">
                                     {error}
                                 </p>
                             )}
@@ -206,7 +228,7 @@ export default function AuthPage() {
                     )}
                 </div>
 
-                <p className="text-center text-xs font-mono text-slate-400 mt-6">
+                <p className="text-center text-xs text-muted-foreground mt-6">
                     By continuing you agree to our Terms of Service
                 </p>
             </div>

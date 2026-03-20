@@ -1,383 +1,346 @@
-// components/layout/Sidebar.tsx
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createClientSupabaseClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils/cn";
+import { useState } from "react";
 import {
     LayoutDashboard,
     Sparkles,
     History,
+    CreditCard,
     LogOut,
     Menu,
     X,
-    Zap,
-    ChevronRight,
     Gem,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import Image from "next/image";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils/cn";
+import type { Plan } from "@/types";
 
-/* ------------------------------------------------------------------ */
-/*  Nav config                                                          */
-/* ------------------------------------------------------------------ */
-
-type NavItem = {
-    href: string;
-    label: string;
-    icon: LucideIcon;
-    highlight?: boolean;
-};
-
-const NAV_ITEMS: NavItem[] = [
-    {
-        href: "/dashboard",
-        label: "Dashboard",
-        icon: LayoutDashboard,
-    },
-    {
-        href: "/generate",
-        label: "Generate",
-        icon: Sparkles,
-        highlight: true,
-    },
-    {
-        href: "/history",
-        label: "History",
-        icon: History,
-    },
-    {
-        href: "/pricing",
-        label: "Pricing",
-        icon: Gem,
-    },
+const NAV = [
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/generate", label: "Generate", icon: Sparkles },
+    { href: "/history", label: "History", icon: History },
+    { href: "/upgrade", label: "Upgrade", icon: CreditCard },
 ];
-
-/* ------------------------------------------------------------------ */
-/*  Props                                                               */
-/* ------------------------------------------------------------------ */
 
 type Props = {
     userEmail: string;
     displayName: string;
-    plan: string;
+    plan: Plan;
     used: number;
     limit: number;
 };
 
-/* ------------------------------------------------------------------ */
-/*  Component                                                           */
-/* ------------------------------------------------------------------ */
-
-export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
+function SidebarContent({
+    userEmail,
+    displayName,
+    plan,
+    used,
+    limit,
+    closeMobile,
+}: Props & { closeMobile?: () => void }) {
     const pathname = usePathname();
-    const router = useRouter();
-    const supabase = createClientSupabaseClient();
-
-    const [mobileOpen, setMobileOpen] = useState(false);
-    const [signingOut, setSigningOut] = useState(false);
-
-    // Trap scroll when mobile menu is open
-    useEffect(() => {
-        document.body.style.overflow = mobileOpen ? "hidden" : "";
-        return () => {
-            document.body.style.overflow = "";
-        };
-    }, [mobileOpen]);
-
-    const handleSignOut = useCallback(async () => {
-        setSigningOut(true);
-        await supabase.auth.signOut();
-        router.push("/auth");
-    }, [supabase, router]);
-
-    const closeMobile = useCallback(() => setMobileOpen(false), []);
-
-    const usagePercent = Math.min(100, Math.round((used / limit) * 100));
-    const isNearLimit = usagePercent >= 60; // matches dashboard threshold — shows at 3/5
-    const isAtLimit = used >= limit;
+    const usagePercent =
+        limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+    const isNearLimit = usagePercent >= 60;
+    const isAtLimit = usagePercent >= 100;
     const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
-    const initials = displayName
-        ? displayName.slice(0, 2).toUpperCase()
-        : userEmail.slice(0, 2).toUpperCase();
 
-    const sidebarContent = (isMobile: boolean) => (
-        <div className="flex flex-col h-full">
-            {/* Logo */}
-            <div className="px-5 pt-6 pb-2">
-                <Link
-                    href="/dashboard"
-                    onClick={closeMobile}
-                    className="inline-flex items-center gap-2.5 group"
+    return (
+        // ── flex-col + h-full keeps the three sections pinned: nav grows, bottom stays ──
+        <div className="flex h-full flex-col">
+            {/* ── Logo ─────────────────────────────────────────── */}
+            <div className="flex items-center gap-2.5 px-4 pt-4 pb-3">
+                <div
+                    className="flex h-8 w-8 items-center justify-center rounded-lg shrink-0"
+                    style={{
+                        background: "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                    }}
                 >
-                    <Image
-                        src="/logo-bull.svg"
-                        alt="Bull"
-                        width={45}
-                        height={45}
-                        className="rounded-lg group-hover:scale-105 transition-transform mb-1"
-                    />
-                    <Image
-                        src="/logo-ListingBull.svg"
-                        alt="ListingBull"
-                        width={150}
-                        height={45}
-                        className="rounded-lg "
-                    />
-                </Link>
+                    <Gem className="h-4 w-4 text-white" />
+                </div>
+                <span className="font-bold text-base tracking-tight text-foreground">
+                    ListingGem
+                </span>
             </div>
 
-            {/* Divider */}
-            <div className="mx-4 h-px bg-muted mb-4" />
-
-            {/* Nav */}
+            {/* ── Nav — flex-1 so it takes available space ─────── */}
             <nav
+                className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto scrollbar-hide"
                 aria-label="Main navigation"
-                className="flex-1 px-3 space-y-0.5"
             >
-                {NAV_ITEMS.map(({ href, label, icon: Icon, highlight }) => {
+                {NAV.map(({ href, label, icon: Icon }) => {
                     const isActive =
-                        pathname === href || pathname.startsWith(href + "/");
+                        href === "/dashboard"
+                            ? pathname === "/dashboard"
+                            : pathname.startsWith(href);
 
                     return (
                         <Link
                             key={href}
                             href={href}
                             onClick={closeMobile}
-                            aria-current={isActive ? "page" : undefined}
                             className={cn(
                                 "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
-                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                 isActive
-                                    ? "bg-primary text-primary-foreground shadow-sm"
-                                    : highlight
-                                      ? "text-foreground hover:bg-primary hover:text-primary-foreground"
-                                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                                    ? "text-white"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-white/5",
                             )}
+                            style={
+                                isActive
+                                    ? {
+                                          background:
+                                              "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                                      }
+                                    : {}
+                            }
+                            aria-current={isActive ? "page" : undefined}
                         >
                             <Icon
-                                className="w-4 h-4 shrink-0 transition-transform duration-150 group-hover:scale-110"
-                                aria-hidden="true"
+                                className={cn(
+                                    "h-4 w-4 shrink-0",
+                                    isActive
+                                        ? "text-white"
+                                        : "text-muted-foreground group-hover:text-foreground",
+                                )}
                             />
-                            <span className="flex-1 text-base sm:text-lg">
-                                {label}
-                            </span>
-
-                            {isActive && (
-                                <ChevronRight
-                                    className="w-3.5 h-3.5 opacity-60"
-                                    aria-hidden="true"
-                                />
-                            )}
-
-                            {highlight && !isActive && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-primary text-primary-foreground rounded-md group-hover:bg-primary-foreground group-hover:text-primary transition-colors">
-                                    NEW
-                                </span>
-                            )}
+                            {label}
                         </Link>
                     );
                 })}
             </nav>
 
-            {/* Usage widget */}
-            <div className="mx-3 mb-3">
+            {/* ── Bottom section — never scrolls away ──────────── */}
+            <div className="shrink-0 px-2 pb-2 space-y-2">
+                {/* Usage card */}
                 <div
-                    className={cn(
-                        "rounded-xl p-3.5 border transition-colors",
-                        isAtLimit
-                            ? "bg-red-50   border-red-200"
-                            : isNearLimit
-                              ? "bg-amber-50 border-amber-200"
-                              : "bg-muted border-border",
-                    )}
+                    className="rounded-xl p-3"
+                    style={{
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.07)",
+                    }}
                 >
                     <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1.5">
-                            <Zap
-                                className={cn(
-                                    "w-3.5 h-3.5",
-                                    isAtLimit
-                                        ? "text-red-500"
-                                        : isNearLimit
-                                          ? "text-amber-500"
-                                          : "text-muted-foreground",
-                                )}
-                                aria-hidden="true"
-                            />
-                            <span className="text-xs font-semibold text-foreground">
-                                Usage
-                            </span>
-                        </div>
+                        <span className="text-xs font-medium text-muted-foreground">
+                            Generations
+                        </span>
                         <span
                             className={cn(
-                                "text-xs font-bold",
+                                "text-xs font-semibold font-mono",
                                 isAtLimit
-                                    ? "text-red-600"
+                                    ? "text-red-400"
                                     : isNearLimit
-                                      ? "text-amber-600"
-                                      : "text-muted-foreground",
+                                      ? "text-amber-400"
+                                      : "text-cyan-400",
                             )}
                         >
-                            {used}/{limit}
+                            {used} / {limit}
                         </span>
                     </div>
 
-                    <div className="h-1.5 bg-sidebar-elite rounded-full overflow-hidden border border-border">
+                    <div
+                        className="h-1.5 rounded-full overflow-hidden"
+                        style={{ background: "rgba(255,255,255,0.08)" }}
+                    >
                         <div
-                            role="progressbar"
-                            aria-valuenow={used}
-                            aria-valuemin={0}
-                            aria-valuemax={limit}
-                            aria-label="Monthly generation usage"
-                            className={cn(
-                                "h-full rounded-full transition-all duration-500",
-                                isAtLimit
-                                    ? "bg-red-500"
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                                width: `${usagePercent}%`,
+                                background: isAtLimit
+                                    ? "#ef4444"
                                     : isNearLimit
-                                      ? "bg-amber-500"
-                                      : "bg-emerald-500",
-                            )}
-                            style={{ width: `${usagePercent}%` }}
+                                      ? "#f59e0b"
+                                      : "linear-gradient(90deg, #06b6d4, #8b5cf6)",
+                            }}
                         />
                     </div>
 
-                    {isAtLimit && (
-                        <Link
-                            href="/upgrade"
-                            onClick={closeMobile}
-                            className="mt-2.5 flex items-center justify-center gap-1.5 w-full py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    <div className="flex items-center justify-between mt-2">
+                        <span
+                            className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold"
+                            style={{
+                                background: "rgba(6,182,212,0.12)",
+                                color: "#06b6d4",
+                                border: "1px solid rgba(6,182,212,0.2)",
+                            }}
                         >
-                            <Zap className="w-3 h-3" aria-hidden="true" />
-                            Upgrade plan
-                        </Link>
-                    )}
+                            {planLabel}
+                        </span>
+                        {plan === "free" && (
+                            <Link
+                                href="/upgrade"
+                                onClick={closeMobile}
+                                className="text-xs font-medium text-violet-400 hover:text-violet-300 transition-colors"
+                            >
+                                Upgrade →
+                            </Link>
+                        )}
+                    </div>
                 </div>
-            </div>
 
-            {/* Divider */}
-            <div className="mx-4 h-px bg-muted" />
-
-            {/* User + sign out */}
-            <div className="p-3">
-                <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-muted transition-colors group">
-                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 text-primary-foreground text-xs font-bold">
-                        {initials}
+                {/* User row */}
+                <div
+                    className="flex items-center gap-3 px-2 py-2 rounded-xl"
+                    style={{ border: "1px solid rgba(255,255,255,0.06)" }}
+                >
+                    <div
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                        style={{
+                            background:
+                                "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                        }}
+                        aria-hidden="true"
+                    >
+                        {(displayName || userEmail).charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">
-                            {displayName || userEmail}
+                        <p className="text-sm font-medium text-foreground truncate leading-none">
+                            {displayName || userEmail.split("@")[0]}
                         </p>
-                        <p className="text-xs text-muted-foreground/70 truncate">
-                            {planLabel} plan
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                            {userEmail}
                         </p>
                     </div>
                     <button
-                        type="button"
-                        onClick={handleSignOut}
-                        disabled={signingOut}
+                        onClick={async () => {
+                            const supabase = createClientSupabaseClient();
+                            await supabase.auth.signOut();
+                            window.location.href = "/auth";
+                        }}
+                        className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
                         aria-label="Sign out"
-                        className={cn(
-                            "p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40",
-                            // Always visible on mobile, hover-reveal on desktop
-                            isMobile
-                                ? "opacity-100"
-                                : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
-                        )}
                     >
-                        <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
+                        <LogOut className="h-4 w-4" />
                     </button>
                 </div>
             </div>
         </div>
     );
+}
+
+export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
+    const [mobileOpen, setMobileOpen] = useState(false);
 
     return (
         <>
-            {/* Desktop */}
+            {/* ── Desktop — floating pill pinned to viewport ───── */}
+            {/*
+                sticky + top-4 + h-[calc(100vh-2rem)] keeps the entire sidebar
+                pinned to the viewport regardless of page scroll.
+                The m-3 + rounded-2xl give it the floating pill look.
+            */}
             <aside
-                className="hidden lg:block w-60 shrink-0 ml-1 my-2 h-[calc(100vh-1rem)] sticky top-2 rounded-xl border border-border bg-card shadow-lg"
-                aria-label="Sidebar"
+                className="hidden lg:flex lg:flex-col lg:shrink-0 sticky top-4 self-start h-[calc(100vh-2rem)] w-60 m-2 rounded-2xl overflow-hidden"
+                style={{
+                    background: "rgba(15,23,42,0.85)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    boxShadow:
+                        "0 0 0 1px rgba(255,255,255,0.04), 0 20px 60px rgba(0,0,0,0.5)",
+                }}
             >
-                {sidebarContent(false)}
+                <SidebarContent
+                    userEmail={userEmail}
+                    displayName={displayName}
+                    plan={plan}
+                    used={used}
+                    limit={limit}
+                />
             </aside>
 
-            {/* Mobile top bar */}
-            <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-card border-b border-border flex items-center justify-between px-4">
-                <Link
-                    href="/dashboard"
-                    onClick={closeMobile}
-                    className="inline-flex items-center gap-2.5 group"
-                >
-                    <Image
-                        src="/logo-bull.svg"
-                        alt="Bull"
-                        width={60}
-                        height={60}
-                        className="rounded-lg group-hover:scale-105 transition-transform"
-                    />
-                    <Image
-                        src="/logo-ListingBull.svg"
-                        alt="ListingBull"
-                        width={150}
-                        height={45}
-                        className="rounded-lg group-hover:scale-105 mt-2 transition-transform"
-                    />
-                </Link>
-
+            {/* ── Mobile top bar ────────────────────────────────── */}
+            <div
+                className="fixed top-0 left-0 right-0 z-40 flex h-14 items-center justify-between px-4 lg:hidden"
+                style={{
+                    background: "rgba(11,17,32,0.9)",
+                    borderBottom: "1px solid rgba(255,255,255,0.07)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                }}
+            >
+                <div className="flex items-center gap-2">
+                    <div
+                        className="flex h-7 w-7 items-center justify-center rounded-lg"
+                        style={{
+                            background:
+                                "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                        }}
+                    >
+                        <Gem className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    <span className="font-bold text-sm text-foreground">
+                        ListingGem
+                    </span>
+                </div>
                 <button
-                    type="button"
                     onClick={() => setMobileOpen(true)}
-                    aria-label="Open navigation menu"
-                    aria-expanded={mobileOpen}
-                    aria-controls="mobile-sidebar"
-                    className="p-2 rounded-xl text-muted-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+                    aria-label="Open menu"
                 >
-                    <Menu className="w-5 h-5" aria-hidden="true" />
+                    <Menu className="h-5 w-5" />
                 </button>
             </div>
 
-            {/* Mobile backdrop */}
-            <div
-                className={cn(
-                    "lg:hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-opacity duration-300",
-                    mobileOpen
-                        ? "opacity-100 pointer-events-auto"
-                        : "opacity-0 pointer-events-none",
-                )}
-                aria-hidden="true"
-                onClick={closeMobile}
-            />
-
-            {/* Mobile drawer */}
-            <aside
-                id="mobile-sidebar"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Navigation menu"
-                className={cn(
-                    "lg:hidden fixed top-0 left-0 z-50 h-full w-72 bg-card shadow-2xl",
-                    "transition-transform duration-300 ease-in-out",
-                    mobileOpen ? "translate-x-0" : "-translate-x-full",
-                )}
-            >
-                <button
-                    type="button"
-                    onClick={closeMobile}
-                    aria-label="Close navigation menu"
-                    className="absolute top-4 right-4 p-2 rounded-xl text-muted-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                    <X className="w-5 h-5" aria-hidden="true" />
-                </button>
-
-                {sidebarContent(true)}
-            </aside>
+            {/* ── Mobile drawer ─────────────────────────────────── */}
+            {mobileOpen && (
+                <>
+                    <div
+                        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+                        onClick={() => setMobileOpen(false)}
+                        aria-hidden="true"
+                    />
+                    <aside
+                        className="fixed inset-y-0 left-0 z-50 w-72 lg:hidden flex flex-col"
+                        style={{
+                            background: "rgba(15,23,42,0.97)",
+                            borderRight: "1px solid rgba(255,255,255,0.08)",
+                        }}
+                    >
+                        {/* Mobile drawer header */}
+                        <div
+                            className="flex items-center justify-between px-4 py-4"
+                            style={{
+                                borderBottom:
+                                    "1px solid rgba(255,255,255,0.07)",
+                            }}
+                        >
+                            <div className="flex items-center gap-2.5">
+                                <div
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg"
+                                    style={{
+                                        background:
+                                            "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                                    }}
+                                >
+                                    <Gem className="h-4 w-4 text-white" />
+                                </div>
+                                <span className="font-bold text-base text-foreground">
+                                    ListingGem
+                                </span>
+                            </div>
+                            <button
+                                onClick={() => setMobileOpen(false)}
+                                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+                                aria-label="Close menu"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                            <SidebarContent
+                                userEmail={userEmail}
+                                displayName={displayName}
+                                plan={plan}
+                                used={used}
+                                limit={limit}
+                                closeMobile={() => setMobileOpen(false)}
+                            />
+                        </div>
+                    </aside>
+                </>
+            )}
         </>
     );
 }
-
-Sidebar.displayName = "Sidebar";

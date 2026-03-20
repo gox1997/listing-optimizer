@@ -1,4 +1,3 @@
-// app/(app)/dashboard/page.tsx
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -7,18 +6,14 @@ import { listGenerations } from "@/services/generation.service";
 import { getUserProfile } from "@/services/user.service";
 import { formatRelativeTime } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
-import { Sparkles, History, Zap } from "lucide-react";
+import { Sparkles, History, Zap, TrendingUp } from "lucide-react";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-    title: "Dashboard — ListingAI",
-};
+export const metadata: Metadata = { title: "Dashboard" };
 
-type Props = {
-    searchParams: Promise<{ upgrade?: string }>;
-};
+type Props = { searchParams: Promise<{ upgrade?: string }> };
 
 export default async function DashboardPage({ searchParams }: Props) {
     const { upgrade } = await searchParams;
@@ -29,56 +24,30 @@ export default async function DashboardPage({ searchParams }: Props) {
     } = await supabase.auth.getUser();
     if (!user) redirect("/auth");
 
-    // Fetch profile safely
-    const fetchProfile = async () => {
-        try {
-            const data = await getUserProfile(user.id);
-            return { data, error: null };
-        } catch (err) {
-            console.error("[DashboardPage] Failed to fetch profile:", {
-                userId: user.id,
-                err,
-            });
-            return { data: null, error: err };
-        }
-    };
-
     const [profileResult, stats, historyResult] = await Promise.all([
-        fetchProfile(),
-        getUsageStats(user.id).catch((err) => {
-            console.error("[DashboardPage] Failed to fetch usage stats:", {
-                userId: user.id,
-                err,
-            });
-            return {
-                allowed: true,
-                used: 0,
-                limit: 5,
-                remaining: 5,
-                resetDate: "",
-                plan: "free" as const,
-                percentUsed: 0,
-            };
-        }),
-        listGenerations(user.id, 1, 3).catch((err) => {
-            console.error(
-                "[DashboardPage] Failed to fetch recent generations:",
-                { userId: user.id, err },
-            );
-            return {
-                success: false as const,
-                error: "Failed",
-                code: "internal_error" as const,
-            };
-        }),
+        getUserProfile(user.id).catch(() => null),
+        getUsageStats(user.id).catch(() => ({
+            allowed: true,
+            used: 0,
+            limit: 5,
+            remaining: 5,
+            resetDate: "",
+            plan: "free" as const,
+            percentUsed: 0,
+        })),
+        listGenerations(user.id, 1, 3).catch(() => ({
+            success: false as const,
+            error: "Failed",
+            code: "internal_error" as const,
+        })),
     ]);
 
-    const name =
-        profileResult.data?.displayName ??
-        profileResult.data?.email ??
+    const rawName =
+        profileResult?.displayName ??
+        profileResult?.email ??
         user.email ??
         "there";
-    const displayName = name.includes("@") ? name.split("@")[0] : name;
+    const displayName = rawName.includes("@") ? rawName.split("@")[0] : rawName;
 
     const recentGens = historyResult.success ? historyResult.generations : [];
     const usagePercent = Math.min(100, stats.percentUsed);
@@ -87,11 +56,16 @@ export default async function DashboardPage({ searchParams }: Props) {
 
     return (
         <div className="max-w-3xl mx-auto space-y-8">
-            {/* Success banner */}
+            {/* Upgrade success banner */}
             {upgrade === "success" && (
                 <div
                     role="alert"
-                    className="p-4 bg-emerald-100  border border-emerald-200 rounded-xl text-sm sm:text-base text-emerald-800 text-center font-medium"
+                    className="p-4 rounded-xl border text-sm font-medium text-center"
+                    style={{
+                        background: "rgba(16,185,129,0.1)",
+                        borderColor: "rgba(16,185,129,0.25)",
+                        color: "#34d399",
+                    }}
                 >
                     🎉 Welcome to your new plan! Your account has been upgraded.
                 </div>
@@ -100,9 +74,10 @@ export default async function DashboardPage({ searchParams }: Props) {
             {/* Welcome */}
             <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                    Welcome back, {displayName} 👋
+                    Welcome back,{" "}
+                    <span className="gradient-text">{displayName}</span> 👋
                 </h1>
-                <p className="text-muted-foreground mt-1 text-base font-mono sm:text-lg">
+                <p className="text-muted-foreground mt-1 text-sm sm:text-base">
                     Here&apos;s what&apos;s happening with your listings.
                 </p>
             </div>
@@ -113,25 +88,30 @@ export default async function DashboardPage({ searchParams }: Props) {
                     label="Generations used"
                     value={`${stats.used} / ${stats.limit}`}
                     sub={`${stats.remaining} remaining`}
-                    accent={isAtLimit ? "red" : isNearLimit ? "amber" : "green"}
+                    accentColor={
+                        isAtLimit
+                            ? "#ef4444"
+                            : isNearLimit
+                              ? "#f59e0b"
+                              : "#10b981"
+                    }
                 >
                     <div className="mt-3">
-                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div className="h-1.5 rounded-full overflow-hidden bg-border">
                             <div
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{
+                                    width: `${usagePercent}%`,
+                                    background: isAtLimit
+                                        ? "#ef4444"
+                                        : isNearLimit
+                                          ? "#f59e0b"
+                                          : "linear-gradient(90deg, #06b6d4, #8b5cf6)",
+                                }}
                                 role="progressbar"
                                 aria-valuenow={stats.used}
                                 aria-valuemin={0}
                                 aria-valuemax={stats.limit as number}
-                                aria-label="Generation usage"
-                                className={cn(
-                                    "h-full rounded-full transition-all",
-                                    isAtLimit
-                                        ? "bg-red-500"
-                                        : isNearLimit
-                                          ? "bg-amber-500"
-                                          : "bg-emerald-500",
-                                )}
-                                style={{ width: `${usagePercent}%` }}
                             />
                         </div>
                     </div>
@@ -143,7 +123,7 @@ export default async function DashboardPage({ searchParams }: Props) {
                         stats.plan.charAt(0).toUpperCase() + stats.plan.slice(1)
                     }
                     sub={stats.plan === "free" ? "Upgrade for more" : "Active"}
-                    accent="slate"
+                    accentColor="#8b5cf6"
                 />
 
                 <StatCard
@@ -154,35 +134,48 @@ export default async function DashboardPage({ searchParams }: Props) {
                             : "—"
                     }
                     sub="Next billing period"
-                    accent="slate"
+                    accentColor="#06b6d4"
                 />
             </div>
 
-            {/* At-limit / near-limit banner */}
+            {/* Limit warning */}
             {(isAtLimit || isNearLimit) && (
                 <div
                     role="alert"
-                    className={cn(
-                        "flex items-center justify-between gap-4 p-4 rounded-xl border text-base",
+                    className="flex items-center justify-between gap-4 p-4 rounded-xl border text-sm"
+                    style={
                         isAtLimit
-                            ? "bg-red-50 border-red-200 text-red-800"
-                            : "bg-amber-50 border-amber-200 text-amber-800",
-                    )}
+                            ? {
+                                  background: "rgba(239,68,68,0.08)",
+                                  borderColor: "rgba(239,68,68,0.2)",
+                                  color: "#fca5a5",
+                              }
+                            : {
+                                  background: "rgba(245,158,11,0.08)",
+                                  borderColor: "rgba(245,158,11,0.2)",
+                                  color: "#fcd34d",
+                              }
+                    }
                 >
-                    <p>
-                        {isAtLimit
-                            ? `You've used all ${stats.limit} generations this month.`
-                            : `You've used ${usagePercent}% of your monthly generations.`}{" "}
-                        Upgrade to keep generating.
-                    </p>
+                    <div className="flex items-center gap-2">
+                        <TrendingUp
+                            className="w-4 h-4 shrink-0"
+                            aria-hidden="true"
+                        />
+                        <p>
+                            {isAtLimit
+                                ? `You've used all ${stats.limit} generations this month.`
+                                : `You've used ${usagePercent}% of your monthly generations.`}{" "}
+                            Upgrade to keep going.
+                        </p>
+                    </div>
                     <Link
                         href="/upgrade"
-                        className={cn(
-                            "shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-                            isAtLimit
-                                ? "bg-red-700 text-white hover:bg-red-600"
-                                : "bg-amber-700 text-white hover:bg-amber-600",
-                        )}
+                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                        style={{
+                            background:
+                                "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                        }}
                     >
                         Upgrade
                     </Link>
@@ -191,26 +184,35 @@ export default async function DashboardPage({ searchParams }: Props) {
 
             {/* Quick actions */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Generate CTA */}
                 <Link
                     href="/generate"
-                    className={cn(
-                        "flex items-center gap-4 p-4 rounded-2xl transition-all",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        isAtLimit
-                            ? "bg-muted text-muted-foreground cursor-not-allowed pointer-events-none"
-                            : "bg-primary text-primary-foreground hover:bg-primary/90",
-                    )}
                     aria-disabled={isAtLimit}
                     tabIndex={isAtLimit ? -1 : undefined}
+                    className={cn(
+                        "flex items-center gap-4 p-5 rounded-2xl transition-all duration-200",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50",
+                        isAtLimit
+                            ? "bg-muted text-muted-foreground cursor-not-allowed pointer-events-none"
+                            : "text-white hover:opacity-90 hover:-translate-y-0.5",
+                    )}
+                    style={
+                        isAtLimit
+                            ? {}
+                            : {
+                                  background:
+                                      "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                                  boxShadow:
+                                      "0 0 30px rgba(139, 92, 246, 0.25)",
+                              }
+                    }
                 >
-                    <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
                         <Sparkles className="w-5 h-5" aria-hidden="true" />
                     </div>
                     <div>
-                        <p className="font-bold text-base sm:text-lg">
-                            Generate listing
-                        </p>
-                        <p className="text-sm sm:text-base font-mono opacity-70 mt-0.5">
+                        <p className="font-bold text-base">Generate listing</p>
+                        <p className="text-sm opacity-75 mt-0.5">
                             {isAtLimit
                                 ? "Upgrade to continue"
                                 : "AI-optimized in seconds"}
@@ -218,9 +220,10 @@ export default async function DashboardPage({ searchParams }: Props) {
                     </div>
                 </Link>
 
+                {/* History */}
                 <Link
                     href="/history"
-                    className="flex items-center gap-4 p-4 bg-card border border-border rounded-2xl hover:border-primary/50 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex items-center gap-4 p-5 bg-card border border-border rounded-2xl hover:border-purple-500/40 hover:-translate-y-0.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50"
                 >
                     <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center shrink-0">
                         <History
@@ -229,10 +232,10 @@ export default async function DashboardPage({ searchParams }: Props) {
                         />
                     </div>
                     <div>
-                        <p className="font-bold text-foreground text-base sm:text-lg">
+                        <p className="font-bold text-foreground text-base">
                             View history
                         </p>
-                        <p className="text-sm sm:text-base font-mono text-muted-foreground mt-0.5">
+                        <p className="text-sm text-muted-foreground mt-0.5">
                             Browse past generations
                         </p>
                     </div>
@@ -243,14 +246,14 @@ export default async function DashboardPage({ searchParams }: Props) {
             {recentGens.length > 0 && (
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-base font-semibold text-foreground">
+                        <h2 className="text-sm font-semibold text-foreground">
                             Recent
                         </h2>
                         <Link
                             href="/history"
-                            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                         >
-                            View all
+                            View all →
                         </Link>
                     </div>
 
@@ -259,7 +262,7 @@ export default async function DashboardPage({ searchParams }: Props) {
                             <li key={gen.id}>
                                 <Link
                                     href={`/generate/${gen.id}`}
-                                    className="flex items-center justify-between gap-3 p-4 bg-card border border-border rounded-xl hover:border-primary/50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    className="flex items-center justify-between gap-3 p-4 bg-card border border-border rounded-xl hover:border-cyan-500/30 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
                                 >
                                     <div className="flex items-center gap-3 min-w-0">
                                         <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center shrink-0">
@@ -272,14 +275,14 @@ export default async function DashboardPage({ searchParams }: Props) {
                                             <p className="text-sm font-medium text-foreground truncate">
                                                 {gen.product_name}
                                             </p>
-                                            <p className="text-xs text-muted-foreground/70 capitalize">
+                                            <p className="text-xs text-muted-foreground/70 capitalize mt-0.5">
                                                 {gen.platform} · {gen.tone}
                                             </p>
                                         </div>
                                     </div>
                                     <time
                                         dateTime={gen.created_at}
-                                        className="text-xs text-muted-foreground/70 shrink-0"
+                                        className="text-xs text-muted-foreground/60 shrink-0"
                                     >
                                         {formatRelativeTime(gen.created_at)}
                                     </time>
@@ -297,59 +300,49 @@ function StatCard({
     label,
     value,
     sub,
-    accent,
+    accentColor,
     children,
 }: {
     label: string;
     value: string;
     sub: string;
-    accent: "green" | "amber" | "red" | "slate";
+    accentColor: string;
     children?: React.ReactNode;
 }) {
-    const dotColor = {
-        green: "bg-emerald-500",
-        amber: "bg-amber-500",
-        red: "bg-red-500",
-        slate: "bg-muted-foreground/30",
-    }[accent];
-
     return (
-        <div
-            className={cn(
-                "group relative overflow-hidden rounded-2xl border bg-card p-5",
-                "transition-all duration-200 ease-out",
-                "hover:shadow-lg hover:-translate-y-0.5",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            )}
-        >
-            {/* Subtle gradient overlay on hover */}
-            <div className="absolute inset-0 bg-linear-to-br from-transparent via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+        <div className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-border/80">
+            {/* Top accent bar */}
+            <div
+                className="absolute inset-x-0 top-0 h-0.5 rounded-t-2xl"
+                style={{ background: accentColor }}
+                aria-hidden="true"
+            />
 
-            {/* Top accent line */}
-            <div className={cn("absolute inset-x-0 top-0 h-0.5", dotColor)} />
+            {/* Hover glow */}
+            <div
+                className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{
+                    background: `radial-gradient(circle at top left, ${accentColor}08, transparent 60%)`,
+                }}
+                aria-hidden="true"
+            />
 
             <div className="relative z-10">
-                {/* Header with dot and label */}
                 <div className="flex items-center gap-2 mb-2">
                     <div
-                        className={cn("w-2 h-2 rounded-full", dotColor)}
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ background: accentColor }}
                         aria-hidden="true"
                     />
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                         {label}
                     </p>
                 </div>
-
-                {/* Value */}
-                <p className="text-xl sm:text-2xl font-bold font-mono tracking-tight text-foreground">
+                <p className="text-2xl font-bold font-mono tracking-tight text-foreground">
                     {value}
                 </p>
-
-                {/* Sub text */}
-                <p className="text-sm text-muted-foreground/80 mt-1">{sub}</p>
-
-                {/* Children (progress bar, etc.) */}
-                {children && <div className="mt-4">{children}</div>}
+                <p className="text-xs text-muted-foreground/80 mt-1">{sub}</p>
+                {children}
             </div>
         </div>
     );
