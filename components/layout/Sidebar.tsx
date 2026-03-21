@@ -123,7 +123,7 @@ function SidebarContent({
                 >
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-medium text-muted-foreground">
-                            Generations
+                            Credits
                         </span>
                         <span
                             className={cn(

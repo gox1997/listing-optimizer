@@ -1,23 +1,19 @@
 // lib/ai/response-parser.ts
 
 import { z } from "zod";
-import type { ListingOutput } from "@/types";
+import type { ListingOutput, ListingScore } from "@/types";
 
-/* ------------------------------------------------------------------ */
-/*  Zod schema — with .transform() for typed tuple (no `as` cast)     */
-/* ------------------------------------------------------------------ */
+// ── Listing output schema ────────────────────────────────────────────
 
 const ListingOutputSchema = z.object({
     seoTitle: z
         .string()
-        .min(10, "SEO title is too short (minimum 10 characters)")
-        .max(500, "SEO title is too long (maximum 500 characters)"),
+        .min(10, "SEO title is too short")
+        .max(500, "SEO title is too long"),
 
     bulletPoints: z
         .array(z.string().min(15, "Bullet point is too short"))
         .length(5, "Must have exactly 5 bullet points")
-        // .transform() eliminates the need for `as [string,string,string,string,string]`
-        // Zod has already validated length === 5 before this runs — safe to assert
         .transform(
             (arr): [string, string, string, string, string] =>
                 arr as [string, string, string, string, string],
@@ -25,7 +21,7 @@ const ListingOutputSchema = z.object({
 
     description: z
         .string()
-        .min(80, "Description is too short (minimum 80 characters)")
+        .min(80, "Description is too short")
         .max(5000, "Description is too long"),
 
     metaDescription: z
@@ -36,32 +32,58 @@ const ListingOutputSchema = z.object({
     tags: z
         .array(z.string().min(1))
         .min(5, "Need at least 5 tags")
-        .max(25, "Too many tags (maximum 25)"),
+        .max(25, "Too many tags"),
 });
 
-/* ------------------------------------------------------------------ */
-/*  Result types                                                        */
-/* ------------------------------------------------------------------ */
+// ── Listing score schema ─────────────────────────────────────────────
 
-export type ParseSuccess = {
-    success: true;
-    data: ListingOutput;
-};
+const ListingScoreSchema = z.object({
+    overallScore: z.number().int().min(0).max(100),
+    grade: z.enum(["A", "B", "C", "D", "F"]),
+    breakdown: z.object({
+        seo: z.number().int().min(0).max(100),
+        keywords: z.number().int().min(0).max(100),
+        conversion: z.number().int().min(0).max(100),
+        compliance: z.number().int().min(0).max(100),
+    }),
+    strengths: z.array(z.string()).length(3),
+    improvements: z
+        .array(
+            z.object({
+                priority: z.enum(["high", "medium", "low"]),
+                field: z.enum([
+                    "seoTitle",
+                    "bulletPoints",
+                    "description",
+                    "metaDescription",
+                    "tags",
+                ]),
+                issue: z.string().min(10),
+                suggestion: z.string().min(10),
+            }),
+        )
+        .min(1)
+        .max(4),
+    verdict: z.string().min(10),
+});
 
+// ── Result types ─────────────────────────────────────────────────────
+
+export type ParseSuccess = { success: true; data: ListingOutput };
 export type ParseFailure = {
     success: false;
     error: string;
     rawResponse?: string;
 };
-
 export type ParseResult = ParseSuccess | ParseFailure;
 
-/* ------------------------------------------------------------------ */
-/*  Main export                                                         */
-/* ------------------------------------------------------------------ */
+export type ScoreParseSuccess = { success: true; data: ListingScore };
+export type ScoreParseFailure = { success: false; error: string };
+export type ScoreParseResult = ScoreParseSuccess | ScoreParseFailure;
+
+// ── parseGenerationResponse ──────────────────────────────────────────
 
 export function parseGenerationResponse(rawResponse: string): ParseResult {
-    // Step 1: clean the response
     let cleaned: string;
     try {
         cleaned = cleanAIResponse(rawResponse);
@@ -73,7 +95,6 @@ export function parseGenerationResponse(rawResponse: string): ParseResult {
         };
     }
 
-    // Step 2: parse JSON
     let parsed: unknown;
     try {
         parsed = JSON.parse(cleaned);
@@ -85,7 +106,6 @@ export function parseGenerationResponse(rawResponse: string): ParseResult {
         };
     }
 
-    // Step 3: validate schema + transform
     const validated = ListingOutputSchema.safeParse(parsed);
 
     if (!validated.success) {
@@ -97,37 +117,72 @@ export function parseGenerationResponse(rawResponse: string): ParseResult {
         };
     }
 
-    // Step 4: post-process (validated.data already has transformed bulletPoints tuple)
     return { success: true, data: postProcess(validated.data) };
 }
 
-/* ------------------------------------------------------------------ */
-/*  cleanAIResponse                                                     */
-/* ------------------------------------------------------------------ */
+// ── parseListingScore ────────────────────────────────────────────────
+
+export function parseListingScore(rawResponse: string): ScoreParseResult {
+    let cleaned: string;
+    try {
+        cleaned = cleanAIResponse(rawResponse);
+    } catch {
+        return {
+            success: false,
+            error: "Score response contained no valid JSON.",
+        };
+    }
+
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(cleaned);
+    } catch {
+        return { success: false, error: "Score response was malformed JSON." };
+    }
+
+    const validated = ListingScoreSchema.safeParse(parsed);
+
+    if (!validated.success) {
+        const first = validated.error.errors[0];
+        return {
+            success: false,
+            error: `Score validation failed: ${first.path.join(".")}: ${first.message}`,
+        };
+    }
+
+    const d = validated.data;
+    return {
+        success: true,
+        data: {
+            overall: d.overallScore,
+            grade: d.grade,
+            breakdown: d.breakdown,
+            strengths: d.strengths,
+            improvements: d.improvements,
+            verdict: d.verdict,
+        },
+    };
+}
+
+// ── cleanAIResponse ──────────────────────────────────────────────────
 
 export function cleanAIResponse(raw: string): string {
     const trimmed = raw.trim();
 
-    // Strategy 1: ```json ... ```
     const jsonFence = trimmed.match(/```json\s*([\s\S]*?)\s*```/);
     if (jsonFence?.[1]) {
         const candidate = jsonFence[1].trim();
         if (candidate.startsWith("{")) return candidate;
     }
 
-    // Strategy 2: ``` ... ```
     const plainFence = trimmed.match(/```\s*([\s\S]*?)\s*```/);
     if (plainFence?.[1]) {
         const candidate = plainFence[1].trim();
         if (candidate.startsWith("{")) return candidate;
     }
 
-    // Strategy 3: already clean JSON
-    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-        return trimmed;
-    }
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) return trimmed;
 
-    // Strategy 4: find outermost { }
     const start = trimmed.indexOf("{");
     const end = trimmed.lastIndexOf("}");
     if (start !== -1 && end !== -1 && end > start) {
@@ -137,25 +192,18 @@ export function cleanAIResponse(raw: string): string {
     throw new Error("No JSON object found in AI response");
 }
 
-/* ------------------------------------------------------------------ */
-/*  postProcess                                                         */
-/* ------------------------------------------------------------------ */
+// ── postProcess ──────────────────────────────────────────────────────
 
 export function postProcess(
     data: z.infer<typeof ListingOutputSchema>,
 ): ListingOutput {
     return {
         seoTitle: data.seoTitle.trim(),
-
-        // bulletPoints is already a [string,string,string,string,string] tuple
-        // from the Zod .transform() above — trim and strip trailing periods
         bulletPoints: data.bulletPoints.map((b) =>
             b.trim().replace(/\.\s*$/, ""),
         ) as [string, string, string, string, string],
-
         description: data.description.trim(),
         metaDescription: enforceMetaLength(data.metaDescription.trim()),
-
         tags: [
             ...new Set(
                 data.tags
@@ -166,19 +214,12 @@ export function postProcess(
     };
 }
 
-/* ------------------------------------------------------------------ */
-/*  enforceMetaLength — improved word-boundary truncation              */
-/* ------------------------------------------------------------------ */
+// ── enforceMetaLength ────────────────────────────────────────────────
 
 export function enforceMetaLength(meta: string): string {
     if (meta.length <= 160) return meta;
-
-    // Split on words and rebuild until we fit, then add ellipsis
-    // This is safer than slicing at an arbitrary character index because:
-    // - It never cuts in the middle of a word
-    // - The ellipsis budget (3 chars) is always accounted for up front
     const words = meta.split(" ");
-    const budget = 160 - 3; // reserve 3 chars for "..."
+    const budget = 157;
     let result = "";
 
     for (const word of words) {
@@ -187,8 +228,6 @@ export function enforceMetaLength(meta: string): string {
         result = candidate;
     }
 
-    // Fallback: if even the first word exceeds budget, hard-slice
     if (!result) return meta.slice(0, budget) + "...";
-
     return result + "...";
 }

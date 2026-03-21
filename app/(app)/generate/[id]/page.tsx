@@ -1,18 +1,11 @@
-// app/(app)/generate/[id]/page.tsx
-
 import { notFound, redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getGeneration } from "@/services/generation.service";
+import { getPlan } from "@/services/subscription.service";
 import { GenerationResult } from "@/components/generate/GenerationResult";
 import type { Metadata } from "next";
 
-type Props = {
-    params: Promise<{ id: string }>;
-};
-
-/* ------------------------------------------------------------------ */
-/*  Metadata                                                            */
-/* ------------------------------------------------------------------ */
+type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id } = await params;
@@ -20,21 +13,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const {
         data: { user },
     } = await supabase.auth.getUser();
-
-    if (!user) return { title: "Generation — ListingAI" };
-
+    if (!user) return { title: "Generation — ListingGem" };
     const result = await getGeneration(user.id, id);
-
-    if (!result.success) return { title: "Generation — ListingAI" };
-
-    return {
-        title: `${result.generation.product_name} — ListingAI`,
-    };
+    if (!result.success) return { title: "Generation — ListingGem" };
+    return { title: `${result.generation.product_name} — ListingGem` };
 }
-
-/* ------------------------------------------------------------------ */
-/*  Page                                                                */
-/* ------------------------------------------------------------------ */
 
 export default async function GenerationPage({ params }: Props) {
     const { id } = await params;
@@ -42,27 +25,31 @@ export default async function GenerationPage({ params }: Props) {
     const {
         data: { user },
     } = await supabase.auth.getUser();
-
     if (!user) redirect("/auth");
 
-    const result = await getGeneration(user.id, id);
+    // Fetch generation + plan in parallel
+    const [result, plan] = await Promise.all([
+        getGeneration(user.id, id),
+        getPlan(user.id),
+    ]);
 
     if (!result.success) {
         if (result.code === "not_found") notFound();
-
-        // Internal error — log and show fallback
         console.error("[GenerationPage] getGeneration failed:", {
             userId: user.id,
             id,
             code: result.code,
             error: result.error,
         });
-
         return (
             <div className="max-w-2xl mx-auto">
                 <div
                     role="alert"
-                    className="text-center py-20 bg-card border border-red-100 rounded-2xl"
+                    className="text-center py-20 rounded-2xl"
+                    style={{
+                        background: "rgba(239,68,68,0.05)",
+                        border: "1px solid rgba(239,68,68,0.15)",
+                    }}
                 >
                     <p className="font-semibold text-foreground">
                         Failed to load generation
@@ -77,7 +64,7 @@ export default async function GenerationPage({ params }: Props) {
 
     return (
         <div className="max-w-2xl mx-auto">
-            <GenerationResult generation={result.generation} />
+            <GenerationResult generation={result.generation} plan={plan} />
         </div>
     );
 }

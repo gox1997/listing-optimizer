@@ -21,9 +21,9 @@ const PLATFORM_LABELS: Record<string, string> = {
 // Dark-compatible tone styles — inline to avoid Tailwind purging
 const TONE_STYLES: Record<string, React.CSSProperties> = {
     professional: {
-        background: "rgba(6,182,212,0.1)",
-        color: "#67e8f9",
-        border: "1px solid rgba(6,182,212,0.2)",
+        background: "rgba(99,102,241,0.1)",
+        color: "#a5b4fc",
+        border: "1px solid rgba(99,102,241,0.2)",
     },
     casual: {
         background: "rgba(16,185,129,0.1)",
@@ -136,22 +136,7 @@ export default async function HistoryPage({ searchParams }: Props) {
                         <li key={gen.id}>
                             <Link
                                 href={`/generate/${gen.id}`}
-                                className="block rounded-2xl p-5 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
-                                style={{
-                                    background: "rgba(30,41,59,0.5)",
-                                    border: "1px solid rgba(255,255,255,0.07)",
-                                }}
-                                onMouseEnter={(e) => {
-                                    (
-                                        e.currentTarget as HTMLElement
-                                    ).style.borderColor = "rgba(6,182,212,0.3)";
-                                }}
-                                onMouseLeave={(e) => {
-                                    (
-                                        e.currentTarget as HTMLElement
-                                    ).style.borderColor =
-                                        "rgba(255,255,255,0.07)";
-                                }}
+                                className="block rounded-2xl p-5 card-history-row transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1 min-w-0">
@@ -298,7 +283,7 @@ function PaginationLink({
             tabIndex={disabled ? -1 : undefined}
             className={cn(
                 "px-4 py-2 rounded-xl border border-border text-sm font-medium transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50",
                 disabled
                     ? "opacity-30 pointer-events-none text-muted-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent",

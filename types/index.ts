@@ -4,6 +4,8 @@ export type {
     GenerationStatus,
     GenerationInput,
     ListingOutput,
+    ListingScore,
+    ListingScoreImprovement,
     Generation,
     GenerationSummary,
 } from "./generation.types";
@@ -26,5 +28,4 @@ export type {
 
 export type { ErrorCode, ApiError, ApiResponse } from "./api.types";
 
-// These are functions (not types) so they use regular export, not export type
 export { isApiSuccess, isApiError } from "./api.types";
