@@ -72,7 +72,7 @@ export async function updateUserProfile(
     const dbUpdates: Record<string, unknown> = {};
 
     if (updates.displayName !== undefined)
-        dbUpdates.display_name = updates.displayName;
+        dbUpdates.full_name = updates.displayName;
     if (updates.defaultPlatform !== undefined)
         dbUpdates.default_platform = updates.defaultPlatform;
     if (updates.defaultTone !== undefined)
@@ -109,7 +109,7 @@ function mapProfile(row: Record<string, unknown>): UserProfile {
     return {
         id: row.id as string,
         email: row.email as string,
-        displayName: (row.display_name as string) ?? null,
+        displayName: (row.full_name as string) ?? null,
         avatarUrl: (row.avatar_url as string) ?? null,
         niche: (row.niche as UserProfile["niche"]) ?? null,
         defaultPlatform:
