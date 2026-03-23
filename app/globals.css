@@ -251,16 +251,12 @@
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-    [style*="orb-drift"],
-    [style*="gradient-border-shift"] {
-        animation: none !important;
-    }
-    [style*="fade-up"] {
-        animation: none !important;
-        opacity: 1 !important;
-    }
-    [style*="cursor-blink"] {
-        animation: none !important;
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
 

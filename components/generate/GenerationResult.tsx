@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { CopyButton } from "./CopyButton";
 import { cn } from "@/lib/utils/cn";
 import {
@@ -21,6 +22,7 @@ import {
     Copy,
     Check,
     RefreshCw,
+    X,
 } from "lucide-react";
 import { apiPost } from "@/lib/utils/api";
 import type { GenerationRow } from "@/services/generation.service";
@@ -90,16 +92,44 @@ function useCopyAll() {
 
 function usePostCopyToast(isPaid: boolean) {
     const [visible, setVisible] = useState(false);
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const dismiss = () => {
+        setVisible(false);
+        if (timerRef.current) clearTimeout(timerRef.current);
+    };
 
     const trigger = () => {
         if (isPaid) return;
         if (sessionStorage.getItem("copy_toast_shown")) return;
         sessionStorage.setItem("copy_toast_shown", "1");
         setVisible(true);
-        setTimeout(() => setVisible(false), 5000);
+        timerRef.current = setTimeout(() => setVisible(false), 5000);
     };
 
-    return { visible, trigger, dismiss: () => setVisible(false) };
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearTimeout(timerRef.current);
+        };
+    }, []);
+
+    return { visible, trigger, dismiss };
+}
+
+// Add after usePostCopyToast hook
+function useCountUp(target: number, duration = 1000) {
+    const [value, setValue] = useState(0);
+    useEffect(() => {
+        const start = performance.now();
+        const tick = (now: number) => {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setValue(Math.round(eased * target));
+            if (progress < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }, [target, duration]);
+    return value;
 }
 // ── Score helpers ────────────────────────────────────────────────────
 
@@ -164,6 +194,13 @@ export function GenerationResult({ generation, plan }: Props) {
 
     const { copied: copiedAll, copy: copyAll } = useCopyAll();
 
+    if (!output) {
+        return (
+            <div className="text-center py-16 text-muted-foreground/50 text-sm">
+                Generation output is unavailable.
+            </div>
+        );
+    }
     const allText = output
         ? [
               `SEO Title:\n${output.seoTitle}`,
@@ -173,14 +210,6 @@ export function GenerationResult({ generation, plan }: Props) {
               `\nTags:\n${output.tags.join(", ")}`,
           ].join("")
         : "";
-
-    if (!output) {
-        return (
-            <div className="text-center py-16 text-muted-foreground/50 text-sm">
-                Generation output is unavailable.
-            </div>
-        );
-    }
 
     const needsExpand = output.description.length > DESCRIPTION_PREVIEW_LENGTH;
 
@@ -553,6 +582,8 @@ export function GenerationResult({ generation, plan }: Props) {
             {upgradeModalOpen && (
                 <UpgradeModal onClose={() => setUpgradeModalOpen(false)} />
             )}
+            {/* ── Post-copy toast — always mounted ─────── */}
+            <PostCopyToast visible={toastVisible} onDismiss={dismissToast} />
         </div>
     );
 }
@@ -572,6 +603,7 @@ function ScoreCard({
 }) {
     const color = getScoreColor(score.overall);
     const glow = getScoreGlow(score.overall);
+    const animatedScore = useCountUp(score.overall, 1200);
 
     return (
         <div
@@ -630,7 +662,7 @@ function ScoreCard({
                         className="text-5xl font-bold font-mono leading-none tabular-nums"
                         style={{ color, textShadow: `0 0 24px ${glow}` }}
                     >
-                        {score.overall}
+                        {animatedScore}
                     </span>
                     <div className="mb-1">
                         <span className="text-base text-muted-foreground/50">
@@ -837,15 +869,6 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
                 }}
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Gradient top line */}
-                <div
-                    className="absolute inset-x-0 top-0 h-px rounded-t-2xl"
-                    style={{
-                        background: "linear-gradient(90deg, #6366f1, #8b5cf6)",
-                    }}
-                    aria-hidden="true"
-                />
-
                 <div
                     className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto"
                     style={{
@@ -940,9 +963,9 @@ const TONES: { value: Tone; label: string }[] = [
 ];
 
 const PLATFORMS: { value: Platform; label: string; icon: string }[] = [
-    { value: "amazon", label: "Amazon", icon: "/public/amazon-icon.svg" },
-    { value: "shopify", label: "Shopify", icon: "/public/shopify-icon.svg" },
-    { value: "etsy", label: "Etsy", icon: "/public/etsy-icon.svg" },
+    { value: "amazon", label: "Amazon", icon: "/amazon-icon.svg" },
+    { value: "shopify", label: "Shopify", icon: "/shopify-icon.svg" },
+    { value: "etsy", label: "Etsy", icon: "/etsy-icon.svg" },
     { value: "general", label: "General", icon: "🌐" },
 ];
 
@@ -964,23 +987,36 @@ function RegenerateActions({
     const [selectedPlatform, setSelectedPlatform] =
         useState<Platform>(currentPlatform);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    // True when user has changed at least one option from the original
     const hasChanges =
         selectedTone !== currentTone || selectedPlatform !== currentPlatform;
+
+    // ── Fix 2: user-friendly labels in button ────────────────────────
+    const selectedToneLabel =
+        TONES.find((t) => t.value === selectedTone)?.label ?? selectedTone;
+    const selectedPlatformLabel =
+        PLATFORMS.find((p) => p.value === selectedPlatform)?.label ??
+        selectedPlatform;
 
     const handlePlatformSelect = (platform: Platform) => {
         if (!isPaid && platform !== currentPlatform) {
             onUpgrade();
             return;
         }
+        setError(null);
         setSelectedPlatform(platform);
+    };
+
+    const handleToneSelect = (tone: Tone) => {
+        setError(null);
+        setSelectedTone(tone);
     };
 
     const handleRegenerate = async () => {
         if (isLoading || !hasChanges) return;
-
         setIsLoading(true);
+        setError(null);
 
         const payload = {
             ...generation.input_data,
@@ -994,6 +1030,13 @@ function RegenerateActions({
         );
 
         if (!result.success) {
+            // ── Fix 1: inline error on failure ───────────────────────
+            setError(
+                result.error?.code === "QUOTA_EXCEEDED"
+                    ? "You've hit your monthly limit. Upgrade to keep generating."
+                    : (result.error?.message ??
+                          "Generation failed. Please try again."),
+            );
             setIsLoading(false);
             return;
         }
@@ -1005,7 +1048,6 @@ function RegenerateActions({
         <div
             className="rounded-2xl p-4 space-y-4"
             style={{
-                // Subtle indigo tint — feels active, not passive
                 background: "rgba(99,102,241,0.04)",
                 border: "1px solid rgba(99,102,241,0.15)",
                 animation: "fade-up 0.5s ease forwards",
@@ -1034,8 +1076,9 @@ function RegenerateActions({
                             <button
                                 key={t.value}
                                 type="button"
-                                onClick={() => setSelectedTone(t.value)}
+                                onClick={() => handleToneSelect(t.value)}
                                 disabled={isLoading}
+                                aria-pressed={isSelected}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
                                 style={{
                                     background: isSelected
@@ -1046,7 +1089,6 @@ function RegenerateActions({
                                         : "1px solid rgba(255,255,255,0.08)",
                                     color: isSelected ? "#a5b4fc" : "#64748b",
                                 }}
-                                aria-pressed={isSelected}
                             >
                                 {t.label}
                                 {isCurrent && !isSelected && (
@@ -1089,6 +1131,7 @@ function RegenerateActions({
                                 type="button"
                                 onClick={() => handlePlatformSelect(p.value)}
                                 disabled={isLoading}
+                                aria-pressed={isSelected}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
                                 style={{
                                     background: isSelected
@@ -1105,19 +1148,28 @@ function RegenerateActions({
                                           ? "#475569"
                                           : "#64748b",
                                 }}
-                                aria-pressed={isSelected}
                             >
+                                {/* ── Fix 3: platform icon as img ──── */}
                                 {isLocked ? (
                                     <Lock
                                         className="w-3 h-3 opacity-40"
                                         aria-hidden="true"
                                     />
+                                ) : p.value !== "general" ? (
+                                    <Image
+                                        src={`/${p.value}-icon.svg`}
+                                        alt=""
+                                        width={14}
+                                        height={14}
+                                        className="w-3.5 h-3.5 object-contain"
+                                        aria-hidden="true"
+                                    />
                                 ) : (
                                     <span
-                                        className="text-sm leading-none"
+                                        className="text-xs leading-none"
                                         aria-hidden="true"
                                     >
-                                        {p.icon}
+                                        🌐
                                     </span>
                                 )}
                                 {p.label}
@@ -1132,12 +1184,35 @@ function RegenerateActions({
                 </div>
             </div>
 
-            {/* Generate button — only active when something changed */}
+            {/* ── Fix 1: inline error message ─────────────────────── */}
+            {error && (
+                <p
+                    className="text-xs px-3 py-2 rounded-lg"
+                    style={{
+                        background: "rgba(239,68,68,0.08)",
+                        border: "1px solid rgba(239,68,68,0.2)",
+                        color: "#fca5a5",
+                    }}
+                    role="alert"
+                >
+                    {error}
+                    {error.includes("limit") && (
+                        <Link
+                            href="/upgrade"
+                            className="ml-1 font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+                        >
+                            Upgrade →
+                        </Link>
+                    )}
+                </p>
+            )}
+
+            {/* Generate button */}
             <button
                 type="button"
                 onClick={handleRegenerate}
                 disabled={isLoading || !hasChanges}
-                className="relative w-full overflow-hidden flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                className="relative w-full overflow-hidden flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
                 style={{
                     background: hasChanges
                         ? "linear-gradient(135deg, #4f46e5, #7c3aed)"
@@ -1152,7 +1227,6 @@ function RegenerateActions({
                     cursor: !hasChanges ? "not-allowed" : "pointer",
                 }}
             >
-                {/* Shimmer — only when active */}
                 {hasChanges && !isLoading && (
                     <span
                         className="pointer-events-none absolute inset-0"
@@ -1179,8 +1253,9 @@ function RegenerateActions({
                 ) : (
                     <>
                         <RefreshCw className="w-4 h-4" aria-hidden="true" />
+                        {/* ── Fix 2: user-friendly label ──────────── */}
                         {hasChanges
-                            ? `Regenerate as ${selectedPlatform !== currentPlatform ? selectedPlatform + " · " : ""}${selectedTone}`
+                            ? `Regenerate as ${selectedPlatform !== currentPlatform ? selectedPlatformLabel + " · " : ""}${selectedToneLabel}`
                             : "Select a different tone or platform"}
                     </>
                 )}
@@ -1212,7 +1287,7 @@ function PostCopyToast({
             aria-live="polite"
         >
             <div
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-white shadow-2xl"
+                className="relative flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-white shadow-2xl"
                 style={{
                     background: "rgba(15,23,42,0.97)",
                     border: "1px solid rgba(99,102,241,0.3)",
@@ -1252,7 +1327,7 @@ function PostCopyToast({
                     className="ml-2 text-muted-foreground/50 hover:text-muted-foreground transition-colors focus-visible:outline-none"
                     aria-label="Dismiss"
                 >
-                    <Check className="w-3.5 h-3.5" aria-hidden="true" />
+                    <X className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
             </div>
         </div>

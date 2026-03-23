@@ -1,8 +1,11 @@
+// app/(app)/generate/[id]/page.tsx
+
 import { notFound, redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getGeneration } from "@/services/generation.service";
 import { getPlan } from "@/services/subscription.service";
 import { GenerationResult } from "@/components/generate/GenerationResult";
+import { RefreshLayout } from "@/components/ui/RefreshLayout"; // ← new
 import type { Metadata } from "next";
 
 type Props = { params: Promise<{ id: string }> };
@@ -27,7 +30,6 @@ export default async function GenerationPage({ params }: Props) {
     } = await supabase.auth.getUser();
     if (!user) redirect("/auth");
 
-    // Fetch generation + plan in parallel
     const [result, plan] = await Promise.all([
         getGeneration(user.id, id),
         getPlan(user.id),
@@ -64,6 +66,12 @@ export default async function GenerationPage({ params }: Props) {
 
     return (
         <div className="max-w-2xl mx-auto">
+            {/*
+                Calls router.refresh() on mount — forces the layout to
+                re-fetch getUsageStats so the sidebar count updates.
+                Must happen AFTER the server has saved + incremented usage.
+            */}
+            <RefreshLayout />
             <GenerationResult generation={result.generation} plan={plan} />
         </div>
     );

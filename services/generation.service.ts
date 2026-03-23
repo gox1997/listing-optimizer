@@ -94,7 +94,14 @@ export async function createGeneration(
     }
 
     // Step 4: Increment usage — fire and forget, never block the response
-    void incrementUsage(userId);
+    const usageResult = await incrementUsage(userId);
+
+    if (!usageResult) {
+        console.error(
+            "[generation.service] QUOTA DRIFT: increment failed. Generation was saved.",
+            { userId, generationId: saveResult.id },
+        );
+    }
 
     return {
         success: true,
