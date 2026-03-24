@@ -37,6 +37,7 @@ export type OnboardingData = {
 // What the user can update in Settings
 export type UserProfileUpdate = {
     displayName?: string;
+    avatarUrl?: string | null;
     defaultPlatform?: Platform;
     defaultTone?: Tone;
     niche?: Niche;

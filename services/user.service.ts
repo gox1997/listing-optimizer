@@ -73,6 +73,9 @@ export async function updateUserProfile(
 
     if (updates.displayName !== undefined)
         dbUpdates.full_name = updates.displayName;
+    if (updates.avatarUrl !== undefined)
+        // 👈 add this block
+        dbUpdates.avatar_url = updates.avatarUrl;
     if (updates.defaultPlatform !== undefined)
         dbUpdates.default_platform = updates.defaultPlatform;
     if (updates.defaultTone !== undefined)
