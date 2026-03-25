@@ -24,6 +24,36 @@ export type GenerationInput = {
     primaryKeyword?: string;
 };
 
+// ── Keyword Intelligence ─────────────────────────────────────────────
+// Mirrors KeywordResult in lib/ai/orchestrator.ts.
+// Single source of truth lives here — orchestrator imports from @/types.
+
+export type KeywordBuyerIntent =
+    | "transactional"
+    | "gift"
+    | "replacement"
+    | "upgrade"
+    | "discovery";
+
+export type KeywordResult = {
+    /** The single highest-value keyword for this product + platform */
+    primaryKeyword: string;
+    /** 5 secondary keywords with distinct buyer intent angles */
+    secondaryKeywords: string[];
+    /** 3 platform-specific terms (backend terms, LSI keywords, Etsy tags) */
+    platformTerms: string[];
+    /** The primary search motivation for this product */
+    buyerIntent: KeywordBuyerIntent;
+    /** One sentence: who is searching and why */
+    buyerPersona: string;
+    /** The highest-value overlooked keyword angle competitors miss */
+    competitorGap: string;
+    /** 2 terms to avoid in the listing */
+    avoidTerms: string[];
+};
+
+// ── Listing Score ────────────────────────────────────────────────────
+
 export type ListingScoreImprovement = {
     priority: "high" | "medium" | "low";
     field:
@@ -50,6 +80,8 @@ export type ListingScore = {
     verdict: string;
 };
 
+// ── Listing Output ───────────────────────────────────────────────────
+
 export type ListingOutput = {
     seoTitle: string;
     bulletPoints: string[];
@@ -59,6 +91,8 @@ export type ListingOutput = {
     listingScore?: ListingScore;
 };
 
+// ── Generation (DB row) ──────────────────────────────────────────────
+
 export type Generation = {
     id: string;
     userId: string;
@@ -67,6 +101,8 @@ export type Generation = {
     tone: Tone;
     input: GenerationInput;
     output: ListingOutput | null;
+    /** Keyword intelligence results — stored separately from listing output */
+    keywords: KeywordResult | null;
     tokensUsed: number | null;
     errorMessage: string | null;
     deletedAt: string | null;

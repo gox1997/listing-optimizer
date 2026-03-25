@@ -39,7 +39,8 @@ function SidebarContent({
     used,
     limit,
     closeMobile,
-}: Props & { closeMobile?: () => void }) {
+    isMobile = false,
+}: Props & { closeMobile?: () => void; isMobile?: boolean }) {
     const pathname = usePathname();
     const usagePercent =
         limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
@@ -48,24 +49,26 @@ function SidebarContent({
     const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
 
     return (
-        // ── flex-col + h-full keeps the three sections pinned: nav grows, bottom stays ──
         <div className="flex h-full flex-col">
-            {/* ── Logo ─────────────────────────────────────────── */}
-            <div className="flex items-center gap-2.5 px-4 pt-4 pb-3">
-                <div
-                    className="flex h-8 w-8 items-center justify-center rounded-lg shrink-0"
-                    style={{
-                        background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                    }}
-                >
-                    <Gem className="h-4 w-4 text-white" />
+            {/* Logo – only shown on desktop; mobile drawer already has its own header */}
+            {!isMobile && (
+                <div className="flex items-center gap-2.5 px-4 pt-4 pb-3">
+                    <div
+                        className="flex h-8 w-8 items-center justify-center rounded-lg shrink-0"
+                        style={{
+                            background:
+                                "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                        }}
+                    >
+                        <Gem className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="font-bold text-base sm:text-xl tracking-tight text-foreground">
+                        ListingGem
+                    </span>
                 </div>
-                <span className="font-bold text-base sm:text-xl tracking-tight text-foreground">
-                    ListingGem
-                </span>
-            </div>
+            )}
 
-            {/* ── Nav — flex-1 so it takes available space ─────── */}
+            {/* Nav */}
             <nav
                 className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto scrollbar-hide"
                 aria-label="Main navigation"
@@ -111,7 +114,7 @@ function SidebarContent({
                 })}
             </nav>
 
-            {/* ── Bottom section — never scrolls away ──────────── */}
+            {/* Bottom section – usage + user */}
             <div className="shrink-0 px-2 pb-2 space-y-2">
                 {/* Usage card */}
                 <div
@@ -171,7 +174,7 @@ function SidebarContent({
                             <Link
                                 href="/upgrade"
                                 onClick={closeMobile}
-                                className="text-xs font-medium text-#c084fc hover:text-violet-300 transition-colors"
+                                className="text-xs font-medium text-violet-400 hover:text-violet-300 transition-colors"
                             >
                                 Upgrade →
                             </Link>
@@ -224,12 +227,7 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
 
     return (
         <>
-            {/* ── Desktop — floating pill pinned to viewport ───── */}
-            {/*
-                sticky + top-4 + h-[calc(100vh-2rem)] keeps the entire sidebar
-                pinned to the viewport regardless of page scroll.
-                The m-3 + rounded-2xl give it the floating pill look.
-            */}
+            {/* Desktop – floating pill */}
             <aside
                 className="hidden lg:flex lg:flex-col lg:shrink-0 sticky top-4 self-start h-[calc(100vh-2rem)] w-60 m-2 rounded-2xl overflow-hidden"
                 style={{
@@ -247,10 +245,11 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
                     plan={plan}
                     used={used}
                     limit={limit}
+                    isMobile={false}
                 />
             </aside>
 
-            {/* ── Mobile top bar ────────────────────────────────── */}
+            {/* Mobile top bar */}
             <div
                 className="fixed top-0 left-0 right-0 z-40 flex h-14 items-center justify-between px-4 lg:hidden"
                 style={{
@@ -283,7 +282,7 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
                 </button>
             </div>
 
-            {/* ── Mobile drawer ─────────────────────────────────── */}
+            {/* Mobile drawer */}
             {mobileOpen && (
                 <>
                     <div
@@ -298,7 +297,6 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
                             borderRight: "1px solid rgba(255,255,255,0.08)",
                         }}
                     >
-                        {/* Mobile drawer header */}
                         <div
                             className="flex items-center justify-between px-4 py-4"
                             style={{
@@ -336,6 +334,7 @@ export function Sidebar({ userEmail, displayName, plan, used, limit }: Props) {
                                 used={used}
                                 limit={limit}
                                 closeMobile={() => setMobileOpen(false)}
+                                isMobile={true}
                             />
                         </div>
                     </aside>

@@ -8,6 +8,8 @@ export type {
     ListingScoreImprovement,
     Generation,
     GenerationSummary,
+    KeywordBuyerIntent,
+    KeywordResult,
 } from "./generation.types";
 
 export type {
